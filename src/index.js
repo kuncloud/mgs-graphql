@@ -12,7 +12,7 @@ import Type from './type'
 import Context from './Context'
 import StringHelper from './utils/StringHelper'
 import Transformer from './transformer'
-import ModelRef from './definition/ModelRef'
+import RemoteSchema from './definition/RemoteSchema'
 import type {SchemaOptionConfig, BuildOptionConfig} from './Definition'
 
 const SimpleGraphQL = {
@@ -48,7 +48,7 @@ const SimpleGraphQL = {
 
   service: <T>(name:string):Service<T> => new Service(name),
 
-  modelRef: (name:string):ModelRef => new ModelRef(name),
+  remoteSchema: (name:string):RemoteSchema => new RemoteSchema(name),
   /**
    * Build the GraphQL Schema
    */

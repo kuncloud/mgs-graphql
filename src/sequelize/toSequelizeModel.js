@@ -6,7 +6,7 @@ import Sequelize from 'sequelize'
 import Type from '../type'
 import Schema from '../definition/Schema'
 import StringHelper from '../utils/StringHelper'
-import ModelRef from '../definition/ModelRef'
+import ModelRef from '../definition/RemoteSchema'
 export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any>):Sequelize.Model {
   const dbDefinition = {}
 

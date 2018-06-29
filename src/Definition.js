@@ -58,13 +58,23 @@ export type LinkedFieldConfig = {
             info:GraphQLResolveInfo,
             sgContext:SGContext) => any
 }
-
+/**
+ * @public
+ */
+export type RemoteCfgType = {
+  def:string,
+  description?:string,
+  resolve: (args:{[string]: any},
+            context:any,
+            info:GraphQLResolveInfo,
+            sgContext:SGContext) => any
+}
 
 export type RemoteLinkConfig={
-  fields?:{[id:string]: FieldType},
-  links?:{[id:string]:LinkedFieldConfig},
-  queries?:{[id:string]: QueryConfig<T>},
-  mutations?:{[id:string]: MutationConfig<T>},
+  fields?:{[id:string]: RemoteCfgType},
+  links?:{[id:string]:RemoteCfgType},
+  queries?:{[id:string]: RemoteCfgType},
+  mutations?:{[id:string]: RemoteCfgType},
 }
 
 /**

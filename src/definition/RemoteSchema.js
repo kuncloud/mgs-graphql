@@ -1,6 +1,6 @@
 // @flow
 
-export default class ModelRef {
+export default class RemoteSchema {
   name:string
 
   constructor (name:string) {
