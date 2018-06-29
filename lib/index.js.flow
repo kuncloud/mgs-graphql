@@ -5,7 +5,10 @@ import _ from 'lodash'
 
 import * as graphql from 'graphql'
 import * as relay from 'graphql-relay'
+import {mergeSchemas} from 'graphql-tools'
+import type {IResolversParameter}  from 'graphql-tools'
 
+import invariant from './utils/invariant'
 import Schema from './definition/Schema'
 import Service from './definition/Service'
 import Type from './type'
@@ -13,7 +16,7 @@ import Context from './Context'
 import StringHelper from './utils/StringHelper'
 import Transformer from './transformer'
 import RemoteSchema from './definition/RemoteSchema'
-import type {SchemaOptionConfig, BuildOptionConfig} from './Definition'
+import type {SchemaOptionConfig, BuildOptionConfig,RemoteLinkConfig} from './Definition'
 
 const SimpleGraphQL = {
 
@@ -56,9 +59,15 @@ const SimpleGraphQL = {
          sequelize:Sequelize,
          schemas?:Array<Schema<any>>,
          services?:Array<Service<any>>,
-         options?:BuildOptionConfig
+         options?:BuildOptionConfig,
+         mergeInfo?:{
+           schemaMerged:graphql.GraphQLSchema,
+           linkInfo?:{
+             [id:string]: RemoteLinkConfig
+           }
+         }
          }):{graphQLSchema:graphql.GraphQLSchema, sgContext:any} => {
-    const {sequelize, schemas = [], services = [], options = {}} = args
+    const {sequelize, schemas = [], services = [], options = {}, mergeInfo = {}} = args
     const context = new Context(sequelize, options)
 
     // 添加Schema
@@ -236,16 +245,123 @@ const SimpleGraphQL = {
       }
     })
 
-    // console.log(22222222)
-    // console.log(rootQuery)
-    // console.log(2222222222)
-    // console.log(rootMutation)
+    let schema = new graphql.GraphQLSchema({
+      query: rootQuery,
+      mutation: rootMutation
+    })
+
+    if(!_.isEmpty(mergeInfo) && mergeInfo.schemaMerged ){
+      if(mergeInfo.linkInfo){
+        const buildLinkInfos=(linkInfos: {[id:string]: RemoteLinkConfig}): {
+          gqls:?Array<string>,
+          resolvers:?IResolversParameter
+        } => {
+          if (_.isEmpty(linkInfos)) {
+            return {
+              gqls: [],
+              resolvers: {}
+            }
+          }
+
+
+          let queryDefs: string = ''
+          let mutationDefs: string = ''
+          let resolvers: IResolversParameter = {
+            Query: {},
+            Mutation: {}
+          }
+          let gqls: Array<string> = []
+
+
+          _.forOwn(linkInfos, (ext, schemaName) => {
+            if (ext.fields) {
+              let typeDef: string = ''
+              _.forOwn(ext.fields, (field, fieldName) => {
+                invariant(
+                  field.def && typeof field.def === 'string' ,
+                  'Must provide field definition'
+                )
+                typeDef += `${fieldName}${field.def}\n`
+                if(!resolvers[schemaName])
+                  resolvers[schemaName] = {}
+                resolvers[schemaName][fieldName] = async(root, args, context, info) => {
+                  return field.resolve(args, context, info, context.getSGContext())
+                }
+              })
+
+              if (!_.isEmpty(typeDef)) {
+                gqls.push(`extend type ${schemaName}{
+                  ${typeDef}
+        }`)
+              }
+            }
+
+            if(ext.queries){
+              _.forOwn(ext.queries, (value, key) => {
+                queryDefs += `${key}${value.def}\n`
+                resolvers.Query[key] = async(root, args, context, info) => {
+                  return value.resolve(args, context, info, context.getSGContext())
+                }
+              })
+            }
+
+            if(ext.mutations){
+              _.forOwn(ext.mutations, (value, key) => {
+                mutationDefs += `${key}${value.def}\n`
+                resolvers.Mutation[key] = async(root, args, context, info) => {
+                  return value.resolve(args, context, info, context.getSGContext())
+                }
+              })
+            }
+          })
+
+
+          if (queryDefs && queryDefs.length) {
+            gqls.push(`extend type Query {
+      ${queryDefs}}`
+            )
+          }
+
+          if (mutationDefs && mutationDefs.length) {
+            gqls.push(`extend type Mutation {
+      ${mutationDefs}}`
+            )
+          }
+
+          console.log('defs:', gqls)
+          console.log('resolver', resolvers)
+
+          return {
+            gqls,
+            resolvers
+          }
+        }
+
+        const {gqls, resolvers} = buildLinkInfos(mergeInfo.linkInfo)
+        let schemas = [schema, mergeInfo.schemaMerged]
+        if (gqls) {
+          let gql = gqls.join(`\n`)
+          if (!_.isEmpty(gql)) {
+            schemas.push(gql)
+          }
+        }
+
+        console.log('gqls:', gqls)
+        schema = mergeSchemas({
+          schemas,
+          resolvers
+        })
+      }else{
+        schema = mergeSchemas({
+          schemas
+        })
+      }
+    }
+
+
     return {
       sgContext: context.getSGContext(),
-      graphQLSchema: new graphql.GraphQLSchema({
-        query: rootQuery,
-        mutation: rootMutation
-      })
+      graphQLSchema: schema
     }
   }
 }
