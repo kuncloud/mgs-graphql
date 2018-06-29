@@ -10,7 +10,7 @@ import Type from '../type'
 import Context from '../Context'
 import StringHelper from '../utils/StringHelper'
 import toGraphQLInputFieldMap from './toGraphQLInputFieldMap'
-import ModelRef from '../definition/RemoteSchema'
+import RemoteSchema from '../definition/RemoteSchema'
 const toGraphQLFieldConfig = function (name:string,
                                        postfix:string,
                                        fieldType:any,
@@ -78,7 +78,7 @@ const toGraphQLFieldConfig = function (name:string,
     }
   }
 
-  if (fieldType instanceof ModelRef) {
+  if (fieldType instanceof RemoteSchema) {
     // const obj = context.graphQLObjectType(fieldType.name)
     // console.log(obj)
     return {type: Type.GraphQLScalarTypes.globalIdInputType(fieldType.name)}

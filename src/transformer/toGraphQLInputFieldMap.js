@@ -9,7 +9,7 @@ import type {GraphQLInputFieldConfig, GraphQLInputFieldConfigMap} from 'graphql'
 import Type from '../type'
 import StringHelper from '../utils/StringHelper'
 import invariant from '../utils/invariant'
-import ModelRef from '../definition/RemoteSchema'
+import RemoteSchema from '../definition/RemoteSchema'
 
 const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):GraphQLInputFieldConfigMap {
   const typeName = (name:string, path:string) => {
@@ -65,7 +65,7 @@ const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):
       }
     }
 
-    if (field instanceof ModelRef) {
+    if (field instanceof RemoteSchema) {
       return {
         type: Type.GraphQLScalarTypes.globalIdInputType(field.name)
       }
