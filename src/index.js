@@ -14,6 +14,7 @@ import Service from './definition/Service'
 import Type from './type'
 import Context from './Context'
 import StringHelper from './utils/StringHelper'
+import Connection from './utils/Connection'
 import Transformer from './transformer'
 import RemoteSchema from './definition/RemoteSchema'
 import type {SchemaOptionConfig, BuildOptionConfig,RemoteLinkConfig} from './Definition'
@@ -36,6 +37,8 @@ const SimpleGraphQL = {
   ScalarFieldTypes: Type.ScalarFieldTypes,
 
   Schema: Schema,
+
+  Connection: Connection,
 
   Service: Service,
 
