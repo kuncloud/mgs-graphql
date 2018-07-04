@@ -28,7 +28,7 @@ export default function (sequelize:Sequelize) {
             if (schema instanceof GS.Schema) {
               schemas.push(schema)
             } else {
-              console.log('Incorrect schema definition file: ' + name)
+              // console.log('Incorrect schema definition file: ' + name)
             }
           }
         }

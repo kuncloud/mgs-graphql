@@ -38,6 +38,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     }
     if (typeof fType === 'string') {
       let foreignField = key
+      let foreignFieldId = key + 'Id';
       let onDelete = 'RESTRICT'
       if (value && value['$type'] && value.column) {
         if (value.column.onDelete) {
@@ -50,7 +51,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
             target: fType,
             hidden: true,
             foreignField: foreignField,
-            foreignKey: {name: foreignField + 'Id', allowNull: false},
+            foreignKey: {name: foreignFieldId, field: StringHelper.toUnderscoredName(foreignFieldId), allowNull: false},
             onDelete: onDelete,
             constraints: true
           }
@@ -61,6 +62,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
             target: fType,
             hidden: true,
             foreignField: foreignField,
+            foreignKey: {name: foreignFieldId, field: StringHelper.toUnderscoredName(foreignFieldId)},
             onDelete: onDelete,
             constraints: true
           }
@@ -95,7 +97,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
       }
     }
   })
-  // console.log("Create Sequlize Model with config", model.name, dbDefinition, model.config.options["table"])
+  // // console.log("Create Sequlize Model with config", model.name, dbDefinition, model.config.options["table"])
   const dbModel = sequelize.define(schema.name, dbDefinition, schema.config.options['table'])
   return dbModel
 }

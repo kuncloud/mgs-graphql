@@ -77,7 +77,7 @@ export default class Context {
     const self = this
     this.nodeInterface = relay.nodeDefinitions((globalId) => {
       var {type, id} = relay.fromGlobalId(globalId)
-      console.log('Warning-------------------- node id Fetcher not implement' + type + ' ' + id)
+      // console.log('Warning-------------------- node id Fetcher not implement' + type + ' ' + id)
     }, (obj) => {
       const type = obj._type
       return self.graphQLObjectTypes[type]
@@ -93,7 +93,7 @@ export default class Context {
   }
 
   addSchema (schema:Schema<any>) {
-    console.log(`addSchema:${schema.name}`)
+    // console.log(`addSchema:${schema.name}`)
     if (this.schemas[schema.name]) {
       throw new Error('Schema ' + schema.name + ' already define.')
     }
@@ -132,11 +132,11 @@ export default class Context {
     })
 
     this.dbModel(schema.name)
-    console.log('addSchema end', schema.name)
+    // console.log('addSchema end', schema.name)
   }
 
   addService (service:Service<any>) {
-    console.log('service begin', service.name)
+    // console.log('service begin', service.name)
     const self = this
     if (self.services[service.name]) {
       throw new Error('Service ' + service.name + ' already define.')
@@ -162,7 +162,7 @@ export default class Context {
       }
       self.addMutation(value)
     })
-    console.log('service end', service.name)
+    // console.log('service end', service.name)
   }
 
   addQuery (config:QueryConfig) {
@@ -180,7 +180,7 @@ export default class Context {
   }
 
   graphQLObjectType (name:string):GraphQLObjectType {
-    console.log('enter graphQLObjectType', name)
+    // console.log('enter graphQLObjectType', name)
 
     const model = this.schemas[name]
     if (!model) {
@@ -351,16 +351,16 @@ export default class Context {
   buildModelAssociations ():void {
     const self = this
     _.forOwn(self.schemas, (schema, schemaName) => {
-      console.log('buildModelAssociations', schema.config.associations.hasMany)
+      // console.log('buildModelAssociations', schema.config.associations.hasMany)
       _.forOwn(schema.config.associations.hasMany, (config, key) => {
-        // console.log('dd', key, config)
+        // // console.log('dd', key, config)
         let d = {
           ...config,
           as: key,
           foreignKey: config.foreignKey || config.foreignField + 'Id',
           through: undefined
         }
-        // console.log(d)
+        // // console.log(d)
         self.dbModel(schema.name).hasMany(self.dbModel(config.target), d)
       })
 

@@ -20,7 +20,7 @@ async function startServer () {
     graphiql: true
   }))
 
-  console.log('GraphQL Server is now running on http://localhost:4000')
+  // console.log('GraphQL Server is now running on http://localhost:4000')
   app.listen(4000)
 }
 

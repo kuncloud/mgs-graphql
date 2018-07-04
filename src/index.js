@@ -88,7 +88,7 @@ const SimpleGraphQL = {
     const finalQueries:{[fieldName: string]: graphql.GraphQLFieldConfig<any, any>} = {}
 
     _.forOwn(context.queries, (value, key) => {
-      console.log('begin build query', key, value)
+      // console.log('begin build query', key, value)
       const fieldConfig = Transformer.toGraphQLFieldConfig(
         key,
         'Payload',
@@ -107,12 +107,12 @@ const SimpleGraphQL = {
             ...value.args
           })
       }
-      console.log('build result', key, finalQueries[key])
+      // console.log('build result', key, finalQueries[key])
     })
 
     const viewerConfig = _.get(options, 'query.viewer', 'AllQuery')
     if (viewerConfig === 'AllQuery') {
-      console.log('begin build AllQuery')
+      // console.log('begin build AllQuery')
       context.graphQLObjectTypes['Viewer'] = new graphql.GraphQLObjectType({
         name: 'Viewer',
         interfaces: [context.nodeInterface],
@@ -137,14 +137,14 @@ const SimpleGraphQL = {
           }
         }
       }
-      console.log('build result', finalQueries['viewer'])
+      // console.log('build result', finalQueries['viewer'])
     } else if (viewerConfig === 'FromModelQuery') {
       if (!finalQueries['viewer']) {
         throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
       }
       // TODO check whether viewer.type is a Node
     } else {
-      console.log('begin build other query')
+      // console.log('begin build other query')
       const fieldConfig = Transformer.toGraphQLFieldConfig(
         'viewer',
         'Payload',
@@ -155,7 +155,7 @@ const SimpleGraphQL = {
         resolve: context.wrapQueryResolve(viewerConfig),
         description: viewerConfig.description
       }
-      console.log('build result', finalQueries['viewer'])
+      // console.log('build result', finalQueries['viewer'])
     }
 
     finalQueries['node'] = {
@@ -187,7 +187,7 @@ const SimpleGraphQL = {
         }
       })
     }
-    console.log('build result', finalQueries['node'])
+    // console.log('build result', finalQueries['node'])
 
     const rootQuery = new graphql.GraphQLObjectType({
       name: 'Query',
@@ -209,7 +209,7 @@ const SimpleGraphQL = {
       fields: () => {
         const fields:{[fieldName: string]: graphql.GraphQLFieldConfig<any, any>} = {}
         _.forOwn(context.mutations, (value, key) => {
-          console.log('begin build mutation:', key, value)
+          // console.log('begin build mutation:', key, value)
           const inputFields = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
           const outputFields = {}
           const payloadFields = _.get(options, 'mutation.payloadFields', [])
@@ -224,13 +224,13 @@ const SimpleGraphQL = {
             }
           }
           _.forOwn(value.outputFields, (fValue, fKey) => {
-            console.log('begin build mutation outputfiled:', fKey, fValue)
+            // console.log('begin build mutation outputfiled:', fKey, fValue)
             outputFields[fKey] = Transformer.toGraphQLFieldConfig(
               key + '.' + fKey,
               'Payload',
               fValue,
               context)
-            console.log('mutation outputfiled result:', outputFields[fKey])
+            // console.log('mutation outputfiled result:', outputFields[fKey])
           })
           if (!value['name']) {
             value['name'] = key
@@ -242,7 +242,7 @@ const SimpleGraphQL = {
             mutateAndGetPayload: context.wrapMutateAndGetPayload(value),
             description: value.doc
           })
-          console.log('mutation result:', fields[key])
+          // console.log('mutation result:', fields[key])
         })
         return fields
       }
@@ -331,8 +331,8 @@ const SimpleGraphQL = {
             )
           }
 
-          console.log('defs:', gqls)
-          console.log('resolver', resolvers)
+          // console.log('defs:', gqls)
+          // console.log('resolver', resolvers)
 
           return {
             gqls,
@@ -349,7 +349,7 @@ const SimpleGraphQL = {
           }
         }
 
-        console.log('gqls:', gqls)
+        // console.log('gqls:', gqls)
         schema = mergeSchemas({
           schemas,
           resolvers

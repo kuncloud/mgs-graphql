@@ -21,7 +21,7 @@ const toGraphQLFieldConfig = function (name:string,
   resolve?: GraphQLFieldResolver<any, any>,
   description?: ?string,
 } {
-  // console.log(`toGraphQLFieldConfig:${name}`)
+  // // console.log(`toGraphQLFieldConfig:${name}`)
   const typeName = (path:string) => {
     return path.replace(/\.\$type/g, '').replace(/\[\d*\]/g, '').split('.').map(v => StringHelper.toInitialUpperCase(v)).join('')
   }
@@ -80,7 +80,7 @@ const toGraphQLFieldConfig = function (name:string,
 
   if (fieldType instanceof RemoteSchema) {
     // const obj = context.graphQLObjectType(fieldType.name)
-    // console.log(obj)
+    // // console.log(obj)
     return {type: Type.GraphQLScalarTypes.globalIdInputType(fieldType.name)}
     // return {
     //   type: Type.GraphQLScalarTypes.globalIdInputType(fieldType.name),
