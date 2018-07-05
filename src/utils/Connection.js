@@ -17,6 +17,8 @@ const resolve = async function connectionResolve (Model, {args = {}, condition =
   }
   const offset = Math.max(after != null ? parseInt(after) : 0, 0);
 
+  sort = sort || args.sort || [];
+
   let order = sort.map(({field, order}) => [field, order])
 
   const result = await Model.findAll({
