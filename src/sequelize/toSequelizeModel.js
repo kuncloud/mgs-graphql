@@ -15,7 +15,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
       return fieldType.columnType
     }
     if (fieldType instanceof ModelRef) {
-      return Sequelize.STRING
+      return Sequelize.INTEGER
     }
     switch (fieldType) {
       case String:
