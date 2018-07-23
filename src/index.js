@@ -63,12 +63,13 @@ const SimpleGraphQL = {
                        linkInfo?:{
                          [id:string]: RemoteLinkConfig
                        }
-                     }): graphql.GraphQLSchema => {
+                     },
+                     context:Context): graphql.GraphQLSchema => {
     //invariant(mergeInfo.linkInfo, 'Must provide linkinfo')
+    console.log('makeMergedSchema')
 
 
-
-    const buildLinkInfos = (linkInfos: {[id:string]: RemoteLinkConfig}): {
+    const buildLinkInfos = (schema:graphql.GraphQLSchema,schemaMerged:graphql.GraphQLSchema,linkInfos: {[id:string]: RemoteLinkConfig},context:Context): {
       gqls:?Array<string>,
       resolvers:?IResolversParameter
     } => {
@@ -85,20 +86,62 @@ const SimpleGraphQL = {
       }
       let gqls: Array<string> = []
 
-
       _.forOwn(linkInfos, (ext, schemaName) => {
         if (ext.fields) {
           let typeDef: string = ''
           _.forOwn(ext.fields, (field, fieldName) => {
+            console.log(`schema is ${schemaName},field is ${fieldName}`)
+
             invariant(
               field.def && typeof field.def === 'string',
               'Must provide field definition'
             )
+
+            const linkIdName = StringHelper.toInitialLowerCase(fieldName) + 'Id'
+            invariant(schema.getType(schemaName).getFields()[linkIdName],
+              `Must provide valid schema: ${schemaName}[${linkIdName}]`
+            )
+
+            invariant(schemaMerged.getType(fieldName).getFields()['id'],
+              `Must provide valid merged schema: ${fieldName}[id]`
+            )
+
             typeDef += `${fieldName}${field.def}\n`
             if (!resolvers[schemaName])
               resolvers[schemaName] = {}
-            resolvers[schemaName][fieldName] = async(root, args, context, info) => {
-              return field.resolve(args, context, info, context.getSGContext())
+            // resolvers[schemaName][fieldName] = (root, args, contxt, info) => {
+            //   console.log('fff')
+            // }
+
+            resolvers[schemaName][fieldName] = {
+              fragment: `... on ${schemaName} { ${linkIdName} }`,
+              resolve(root, args, contxt, info) {
+                console.log('origin remote field resolve', root)
+
+                const defaultResolve = (root, args, context, info, sgContext) => {
+                  const globalId = relay.toGlobalId(StringHelper.toInitialUpperCase(fieldName), root[linkIdName])
+                  console.log('default remote field resolve', root,globalId)
+                  return info.mergeInfo.delegateToSchema({
+                    schema: schemaMerged,
+                    operation: 'query',
+                    fieldName: StringHelper.toInitialLowerCase(fieldName),
+                    args: {
+                      id: globalId
+                    },
+                    context,
+                    info
+                  })
+                }
+
+                const fn = context.wrapFieldResolve({
+                  name: fieldName.split('.').slice(-1)[0],
+                  path: fieldName,
+                  //$type: objType,
+                  resolve: field['resolve'] || defaultResolve
+                })
+
+                return fn(root,args,contxt,info)
+              },
             }
           })
 
@@ -149,8 +192,8 @@ const SimpleGraphQL = {
 
 
 
-      // console.log('defs:', gqls)
-      // console.log('resolver', resolvers)
+      console.log('gqls:', gqls)
+      console.log('resolver', resolvers)
 
       return {
         gqls,
@@ -158,7 +201,8 @@ const SimpleGraphQL = {
       }
     }
 
-    const {gqls, resolvers} = buildLinkInfos(mergeInfo.linkInfo)
+
+    const {gqls, resolvers} = buildLinkInfos(schema,mergeInfo.schemaMerged,mergeInfo.linkInfo,context)
     let schemas = [schema, mergeInfo.schemaMerged]
     if (gqls) {
       let gql = gqls.join(`\n`)
@@ -167,7 +211,6 @@ const SimpleGraphQL = {
       }
     }
 
-    // console.log('gqls:', gqls)
 
     schema = mergeSchemas({
       schemas,
@@ -377,7 +420,7 @@ const SimpleGraphQL = {
     })
 
     if (!_.isEmpty(mergeInfo) && mergeInfo.schemaMerged) {
-      schema = SimpleGraphQL.makeMergedSchema(schema, mergeInfo)
+      schema = SimpleGraphQL.makeMergedSchema(schema, mergeInfo, context)
     }
 
 
