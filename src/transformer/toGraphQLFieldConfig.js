@@ -79,34 +79,7 @@ const toGraphQLFieldConfig = function (name:string,
   }
 
   if (fieldType instanceof RemoteSchema) {
-    // const obj = context.graphQLObjectType(fieldType.name)
-    // // console.log(obj)
-    return {type: Type.GraphQLScalarTypes.globalIdInputType(fieldType.name)}
-    // return {
-    //   type: Type.GraphQLScalarTypes.globalIdInputType(fieldType.name),
-    //   resolve: context.wrapFieldResolve({
-    //     name: name.split('.').slice(-1)[0],
-    //     path: name,
-    //     $type: Type.GraphQLScalarTypes.Json,
-    //     resolve: async function (root, args, context, info, sgContext) {
-    //       const fieldName = name.split('.').slice(-1)[0]
-    //       if (_.isFunction(root['get' + StringHelper.toInitialUpperCase(fieldName)])) {
-    //         if (root[fieldName] != null && root[fieldName].id != null) {
-    //           return root[fieldName]
-    //         } else {
-    //           return root['get' + StringHelper.toInitialUpperCase(fieldName)]()
-    //         }
-    //       }
-    //       if (root && root[fieldName] && (
-    //           typeof root[fieldName] === 'number' ||
-    //           typeof root[fieldName] === 'string'
-    //         )) {
-    //         return sgContext.services[fieldType].findOne({where: {id: root[fieldName]}})
-    //       }
-    //       return root[fieldName]
-    //     }
-    //   })
-    // }
+    return {type: graphql.GraphQLID}
   }
 
   if (typeof fieldType === 'string') {
