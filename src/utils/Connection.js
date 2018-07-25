@@ -1,5 +1,6 @@
 'use strict'
 
+import _ from 'lodash'
 
 const resolve = async function connectionResolve (Model, {args = {}, condition = {}, include = [], sort = []}) {
 
@@ -27,7 +28,7 @@ const resolve = async function connectionResolve (Model, {args = {}, condition =
     },
     include,
     limit: first,
-    offset: after,
+    offset: offset,
     order
   })
 
