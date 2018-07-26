@@ -201,7 +201,7 @@ export default class Context {
         }
       }
       const interfaces = [this.nodeInterface]
-      const objectType = Transformer.toGraphQLFieldConfig(typeName, '', obj, this, interfaces).type
+      const objectType = Transformer.toGraphQLFieldConfig(typeName, '', obj, this, interfaces, true).type
       if (objectType instanceof graphql.GraphQLObjectType) {
         objectType.description = model.config.options.description
         this.graphQLObjectTypes[typeName] = objectType

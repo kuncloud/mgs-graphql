@@ -15,7 +15,9 @@ const toGraphQLFieldConfig = function (name:string,
                                        postfix:string,
                                        fieldType:any,
                                        context:Context,
-                                       interfaces:any = []):{
+                                       interfaces:any = [],
+                                       remoteWithId = false
+):{
   type: GraphQLOutputType,
   args?: {[string]:any},
   resolve?: GraphQLFieldResolver<any, any>,
@@ -193,6 +195,22 @@ const toGraphQLFieldConfig = function (name:string,
           _.forOwn(fieldType, (value, key) => {
             if (value['$type'] && value['hidden']) {
             } else {
+              if(remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema)){
+                const schemaId = key + 'Id'
+                console.log(`schema ${name} generate ${schemaId}`)
+                fields[schemaId] = {
+                  type: graphql.GraphQLID,
+                  resolve: async function (root) {
+                    const fieldName = schemaId
+                    if (root[fieldName]) {
+                      return relay.toGlobalId(value['$type'].name , root[fieldName])
+                    } else {
+                      return null
+                    }
+                  }
+                }
+              }
+
               fields[key] = toGraphQLFieldConfig(name + postfix + '.' + key, '', value, context)
             }
           })
