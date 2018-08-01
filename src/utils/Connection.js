@@ -1,5 +1,6 @@
 'use strict'
 
+import _ from 'lodash'
 
 const resolve = async function connectionResolve (Model, {args = {}, condition = {}, include = [], sort = []}) {
 
@@ -27,7 +28,7 @@ const resolve = async function connectionResolve (Model, {args = {}, condition =
     },
     include,
     limit: first,
-    offset: after,
+    offset: offset,
     order
   })
 
@@ -84,7 +85,20 @@ const sqlResolve = async function (sequelize:Sequelize, modelName:string, args:{
 
   const offset = Math.max(after != null ? parseInt(after) : 0, 0)
 
-  const result = await sequelize.query(`select ${modelName}.* ${conditionSql} ${orderBySql} LIMIT ${first} OFFSET ${offset}`
+  const tableName = sequelize.models[modelName].options.tableName || sequelize.models[modelName].options.name.plural
+
+  const columnMappings = []
+  _.forOwn(sequelize.models[modelName].tableAttributes, (field, key) => {
+    if (field && field.field && field.fieldName) {
+      if (field.field === field.fieldName) {
+        columnMappings.push(`${tableName}.${field.field}`)
+      } else {
+        columnMappings.push(`${tableName}.${field.field} as ${field.fieldName}`)
+      }
+    }
+  })
+
+  const result = await sequelize.query(`select ${columnMappings.join(', ')} ${conditionSql} ${orderBySql} LIMIT ${first} OFFSET ${offset}`
     , {
       replacements: replacements,
       model: sequelize.models[modelName],

@@ -107,6 +107,20 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
       }
     }
   })
+
+  // schema定义中的indexes的field驼峰名称改为下划线来新建table
+  if(schema.config.options['table'] && schema.config.options['table']['indexes']){
+    schema.config.options['table']['indexes'].forEach((item)=>{
+      let tempFields = [];
+      if (!!item['unique'] && !!item['fields']){
+        item['fields'].forEach((field)=>{
+          tempFields.push(field.replace(/([A-Z])/g,"_$1").toLowerCase())
+        })
+      }
+      item['fields'] = tempFields
+    })
+  }
+
   // // console.log("Create Sequlize Model with config", model.name, dbDefinition, model.config.options["table"])
   const dbModel = sequelize.define(schema.name, dbDefinition, schema.config.options['table'])
   return dbModel

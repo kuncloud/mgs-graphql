@@ -45,11 +45,15 @@ export default function addMutation (schema:Schema<any>, options:any):void {
               key = key + 'Id'
             }
             if (typeof args[key] !== 'undefined') {
+              attrs[StringHelper.toUnderscoredName(key)] = args[key]
+              attrs[key] = args[key]
+              /*
               if (dbModel.options.underscored) {
                 attrs[StringHelper.toUnderscoredName(key)] = args[key]
               } else {
                 attrs[key] = args[key]
               }
+              */
             }
           } else if (typeof args[key] !== 'undefined') {
             attrs[key] = args[key]
