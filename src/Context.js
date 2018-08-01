@@ -11,6 +11,7 @@ import Service from './definition/Service'
 import StringHelper from './utils/StringHelper'
 import invariant from './utils/invariant'
 import Transformer from './transformer'
+import type {IResolversParameter} from 'graphql-tools'
 
 import SequelizeContext from './sequelize/SequelizeContext'
 
@@ -21,10 +22,10 @@ export type QueryConfig ={
   $type:LinkedFieldType,
   description?:string,
   args?:ArgsType,
-  resolve: (args:{[argName: string]: any},
-            context:any,
-            info:graphql.GraphQLResolveInfo,
-            sgContext:SGContext) => any
+  resolve: (args: {[argName: string]: any},
+            context: any,
+            info: graphql.GraphQLResolveInfo,
+            sgContext: SGContext) => any
 }
 
 export type MutationConfig ={
@@ -32,34 +33,38 @@ export type MutationConfig ={
   description?:string,
   inputFields:ArgsType,
   outputFields:{[string]:LinkedFieldType},
-  mutateAndGetPayload:(args:{[argName: string]: any},
-                       context:any,
-                       info:graphql.GraphQLResolveInfo,
-                       sgContext:SGContext) => any
+  mutateAndGetPayload:(args: {[argName: string]: any},
+                       context: any,
+                       info: graphql.GraphQLResolveInfo,
+                       sgContext: SGContext) => any
 }
 
 export default class Context {
-  dbContext:SequelizeContext
+  dbContext: SequelizeContext
 
-  options:BuildOptionConfig
+  options: BuildOptionConfig
 
-  dbModels:{[id:string]:Sequelize.Model}
+  dbModels: {[id:string]:Sequelize.Model}
 
-  nodeInterface:graphql.GraphQLInterfaceType
+  nodeInterface: graphql.GraphQLInterfaceType
 
-  schemas:{[id:string]: Schema<any> }
+  schemas: {[id:string]: Schema<any>}
 
-  services:{[id:string]: Service<any> }
+  services: {[id:string]: Service<any>}
 
-  graphQLObjectTypes:{[id:string]: GraphQLObjectType}
+  graphQLObjectTypes: {[id:string]: GraphQLObjectType}
 
-  queries:{[id:string]:QueryConfig}
+  queries: {[id:string]:QueryConfig}
 
-  mutations:{[id:string]:MutationConfig}
+  mutations: {[id:string]:MutationConfig}
 
-  connectionDefinitions:{[id:string]:{connectionType:graphql.GraphQLObjectType, edgeType:graphql.GraphQLObjectType}}
+  connectionDefinitions: {[id:string]:{connectionType:graphql.GraphQLObjectType, edgeType:graphql.GraphQLObjectType}}
 
-  constructor (sequelize:Sequelize, options:BuildOptionConfig, remoteObjs:{[id:string]: GraphQLObjectType}={}) {
+  resolvers: IResolversParameter
+
+  remote_prefix: String
+
+  constructor(sequelize: Sequelize, options: BuildOptionConfig, remoteObjs: {[id:string]: GraphQLObjectType} = {}) {
     this.dbContext = new SequelizeContext(sequelize)
     this.options = {...options}
 
@@ -82,9 +87,18 @@ export default class Context {
       const type = obj._type
       return self.graphQLObjectTypes[type]
     }).nodeInterface
+
+    this.resolvers  = {
+      Query: {},
+      Mutation: {}
+    }
+
+    this.remote_prefix = '_remote_'
+
+
   }
 
-  getSGContext () {
+  getSGContext() {
     return {
       sequelize: this.dbContext.sequelize,
       models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
@@ -92,13 +106,62 @@ export default class Context {
     }
   }
 
-  addSchema (schema:Schema<any>) {
-    // console.log(`addSchema:${schema.name}`)
+
+
+  addRemoteResolver(schemaName:String, fieldName:String, linkId:String, target:String){
+    if (!this.resolvers[schemaName])
+      this.resolvers[schemaName] = {}
+
+    const self = this
+    this.resolvers[schemaName][fieldName] = {
+      fragment: `... on ${schemaName} { ${linkId} }`,
+      resolve(root, args, context, info) {
+        if(self.schemaMerged){
+          const fn = self.wrapFieldResolve({
+            name:  fieldName,
+            path:  null,
+            $type: null,
+            resolve: async function (root, args, context, info) {
+              if (root && root[linkId] && (
+                  typeof root[linkId] === 'number' ||
+                  typeof root[linkId] === 'string'
+                )) {
+                return info.mergeInfo.delegateToSchema({
+                  schema:     self.schemaMerged,
+                  operation:  'query',
+                  fieldName:  StringHelper.toInitialLowerCase(target),
+                  args: {
+                    id: root[linkId]
+                  },
+                  context,
+                  info
+                })
+              }else{
+                //throw new Error('Must provide linkId',linkId,schema.name)
+              }
+
+              return root[fieldName]
+            }
+          })
+
+          return fn(root,args,context,info)
+        }
+
+        return root[fieldName]
+      }
+    }
+  }
+
+  addSchema(schema: Schema<any>) {
+
     if (this.schemas[schema.name]) {
       throw new Error('Schema ' + schema.name + ' already define.')
     }
     if (this.services[schema.name]) {
       throw new Error('Schema ' + schema.name + ' conflict with Service ' + schema.name)
+    }
+    if (schema.name.length >= 1 && schema.name[0] === '_' ) {
+      throw new Error(`Schema "${schema.name}" must not begin with "_", which is reserved by MGS`)
     }
     this.schemas[schema.name] = schema
 
@@ -132,11 +195,10 @@ export default class Context {
     })
 
     this.dbModel(schema.name)
-    // console.log('addSchema end', schema.name)
+
   }
 
-  addService (service:Service<any>) {
-    // console.log('service begin', service.name)
+  addService(service: Service<any>) {
     const self = this
     if (self.services[service.name]) {
       throw new Error('Service ' + service.name + ' already define.')
@@ -162,26 +224,46 @@ export default class Context {
       }
       self.addMutation(value)
     })
-    // console.log('service end', service.name)
   }
 
-  addQuery (config:QueryConfig) {
+  addQuery(config: QueryConfig) {
     if (this.queries[config.name]) {
       throw new Error('Query ' + config.name + ' already define.')
     }
     this.queries[config.name] = config
   }
 
-  addMutation (config:MutationConfig) {
+  addMutation(config: MutationConfig) {
     if (this.mutations[config.name]) {
       throw new Error('Mutation ' + config.name + ' already define.')
     }
     this.mutations[config.name] = config
   }
 
-  graphQLObjectType (name:string):GraphQLObjectType {
-    // console.log('enter graphQLObjectType', name)
+  remoteGraphQLObjectType(name: string): GraphQLObjectType {
+    const typeName = this.remote_prefix + name
+    if (!this.graphQLObjectTypes[typeName]) {
+      const objectType = new graphql.GraphQLObjectType({
+        name: typeName,
+        fields: {
+          'id': {
+            type: graphql.GraphQLString,
+            resolve: () => 'not supported'
+          }
+        },//TODO support arguments
+        description: JSON.stringify({
+          target:name
+        })
+      })
+      this.graphQLObjectTypes[typeName] = objectType
 
+    } else {
+
+    }
+    return this.graphQLObjectTypes[typeName]
+  }
+
+  graphQLObjectType(name: string): GraphQLObjectType {
     const model = this.schemas[name]
     if (!model) {
       // throw new Error('Schema ' + name + ' not define.')
@@ -212,7 +294,7 @@ export default class Context {
     return this.graphQLObjectTypes[typeName]
   }
 
-  dbModel (name:string):Sequelize.Model {
+  dbModel(name: string): Sequelize.Model {
     const model = this.schemas[name]
     if (!model) {
       throw new Error('Schema ' + name + ' not define.')
@@ -233,7 +315,7 @@ export default class Context {
     return self.dbModels[typeName]
   }
 
-  wrapQueryResolve (config:QueryConfig):any {
+  wrapQueryResolve(config: QueryConfig): any {
     const self = this
     let hookFun = (action, invokeInfo, next) => next()
 
@@ -247,32 +329,32 @@ export default class Context {
     }
 
     return (source, args, context, info) => hookFun({
-      type: 'query',
-      config: config
-    }, {
-      source: source,
-      args: args,
-      context: context,
-      info: info,
-      sgContext: self.getSGContext()
-    },
+        type: 'query',
+        config: config
+      }, {
+        source: source,
+        args: args,
+        context: context,
+        info: info,
+        sgContext: self.getSGContext()
+      },
       () => {
         return config.resolve(args, context, info, self.getSGContext())
       }
     )
   }
 
-  wrapFieldResolve (config:{
+  wrapFieldResolve(config: {
     name:string,
     $type:LinkedFieldType,
     description?:string,
     args?:ArgsType,
-    resolve: (source:any,
-              args:{[argName: string]: any},
-              context:any,
-              info:graphql.GraphQLResolveInfo,
-              sgContext:SGContext) => any
-  }):any {
+    resolve: (source: any,
+              args: {[argName: string]: any},
+              context: any,
+              info: graphql.GraphQLResolveInfo,
+              sgContext: SGContext) => any
+  }): any {
     const self = this
 
     let hookFun = (action, invokeInfo, next) => next()
@@ -286,20 +368,20 @@ export default class Context {
     }
 
     return (source, args, context, info) => hookFun({
-      type: 'field',
-      config: config
-    }, {
-      source: source,
-      args: args,
-      context: context,
-      info: info,
-      sgContext: self.getSGContext()
-    },
+        type: 'field',
+        config: config
+      }, {
+        source: source,
+        args: args,
+        context: context,
+        info: info,
+        sgContext: self.getSGContext()
+      },
       () => config.resolve(source, args, context, info, self.getSGContext())
     )
   }
 
-  wrapMutateAndGetPayload (config:MutationConfig):any {
+  wrapMutateAndGetPayload(config: MutationConfig): any {
     const self = this
 
     let hookFun = (action, invokeInfo, next) => next()
@@ -313,19 +395,19 @@ export default class Context {
     }
 
     return (args, context, info) => hookFun({
-      type: 'mutation',
-      config: config
-    }, {
-      args: args,
-      context: context,
-      info: info,
-      sgContext: self.getSGContext()
-    },
+        type: 'mutation',
+        config: config
+      }, {
+        args: args,
+        context: context,
+        info: info,
+        sgContext: self.getSGContext()
+      },
       () => config.mutateAndGetPayload(args, context, info, self.getSGContext())
     )
   }
 
-  connectionDefinition (schemaName:string):{connectionType:graphql.GraphQLObjectType, edgeType:graphql.GraphQLObjectType} {
+  connectionDefinition(schemaName: string): {connectionType:graphql.GraphQLObjectType, edgeType:graphql.GraphQLObjectType} {
     if (!this.connectionDefinitions[schemaName]) {
       this.connectionDefinitions[schemaName] = relay.connectionDefinitions({
         name: StringHelper.toInitialUpperCase(schemaName),
@@ -340,27 +422,24 @@ export default class Context {
     return this.connectionDefinitions[schemaName]
   }
 
-  connectionType (schemaName:string):graphql.GraphQLObjectType {
+  connectionType(schemaName: string): graphql.GraphQLObjectType {
     return this.connectionDefinition(schemaName).connectionType
   }
 
-  edgeType (schemaName:string):graphql.GraphQLObjectType {
+  edgeType(schemaName: string): graphql.GraphQLObjectType {
     return this.connectionDefinition(schemaName).edgeType
   }
 
-  buildModelAssociations ():void {
+  buildModelAssociations(): void {
     const self = this
     _.forOwn(self.schemas, (schema, schemaName) => {
-      // console.log('buildModelAssociations', schema.config.associations.hasMany)
       _.forOwn(schema.config.associations.hasMany, (config, key) => {
-        // // console.log('dd', key, config)
         let d = {
           ...config,
           as: key,
           foreignKey: config.foreignKey || config.foreignField + 'Id',
           through: undefined
         }
-        // // console.log(d)
         self.dbModel(schema.name).hasMany(self.dbModel(config.target), d)
       })
 

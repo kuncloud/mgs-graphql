@@ -2,7 +2,7 @@
 
 import Sequelize from 'sequelize'
 import _ from 'lodash'
-
+import {GraphQLString,printType,GraphQLDirective,DirectiveLocation,GraphQLNonNull,Kind} from 'graphql'
 import * as graphql from 'graphql'
 import * as relay from 'graphql-relay'
 import {mergeSchemas} from 'graphql-tools'
@@ -19,6 +19,8 @@ import Connection from './utils/Connection'
 import Transformer from './transformer'
 import RemoteSchema from './definition/RemoteSchema'
 import type {SchemaOptionConfig, BuildOptionConfig, RemoteLinkConfig} from './Definition'
+import {mergeAllSchemas} from './transformer/schemaVistor'
+
 
 const SimpleGraphQL = {
 
@@ -57,170 +59,6 @@ const SimpleGraphQL = {
 
   remoteSchema: (name: string): RemoteSchema => new RemoteSchema(name),
 
-  makeMergedSchema: (schema: graphql.GraphQLSchema,
-                     mergeInfo: {
-                       schemaMerged:graphql.GraphQLSchema,
-                       linkInfo?:{
-                         [id:string]: RemoteLinkConfig
-                       }
-                     },
-                     context:Context): graphql.GraphQLSchema => {
-    //invariant(mergeInfo.linkInfo, 'Must provide linkinfo')
-    console.log('makeMergedSchema')
-
-
-    const buildLinkInfos = (schema:graphql.GraphQLSchema,schemaMerged:graphql.GraphQLSchema,linkInfos: {[id:string]: RemoteLinkConfig},context:Context): {
-      gqls:?Array<string>,
-      resolvers:?IResolversParameter
-    } => {
-      if (_.isEmpty(linkInfos)) {
-        return {gqls: [], resolvers: {}}
-      }
-
-
-      let queryDefs: string = ''
-      let mutationDefs: string = ''
-      let resolvers: IResolversParameter = {
-        Query: {},
-        Mutation: {}
-      }
-      let gqls: Array<string> = []
-
-      _.forOwn(linkInfos, (ext, schemaName) => {
-        if (ext.fields) {
-          let typeDef: string = ''
-          _.forOwn(ext.fields, (field, fieldName) => {
-            console.log(`schema is ${schemaName},field is ${fieldName}`)
-
-            invariant(
-              field.def && typeof field.def === 'string',
-              'Must provide field definition'
-            )
-
-            const linkIdName = StringHelper.toInitialLowerCase(fieldName) + 'Id'
-            invariant(schema.getType(schemaName).getFields()[linkIdName],
-              `Must provide valid schema: ${schemaName}[${linkIdName}]`
-            )
-
-            invariant(schemaMerged.getType(fieldName).getFields()['id'],
-              `Must provide valid merged schema: ${fieldName}[id]`
-            )
-
-            typeDef += `${fieldName}${field.def}\n`
-            if (!resolvers[schemaName])
-              resolvers[schemaName] = {}
-            // resolvers[schemaName][fieldName] = (root, args, contxt, info) => {
-            //   console.log('fff')
-            // }
-
-            resolvers[schemaName][fieldName] = {
-              fragment: `... on ${schemaName} { ${linkIdName} }`,
-              resolve(root, args, contxt, info) {
-                console.log('origin remote field resolve', root)
-
-                const defaultResolve = (root, args, context, info, sgContext) => {
-                  const globalId = relay.toGlobalId(StringHelper.toInitialUpperCase(fieldName), root[linkIdName])
-                  console.log('default remote field resolve', root,globalId)
-                  return info.mergeInfo.delegateToSchema({
-                    schema: schemaMerged,
-                    operation: 'query',
-                    fieldName: StringHelper.toInitialLowerCase(fieldName),
-                    args: {
-                      id: globalId
-                    },
-                    context,
-                    info
-                  })
-                }
-
-                const fn = context.wrapFieldResolve({
-                  name: fieldName.split('.').slice(-1)[0],
-                  path: fieldName,
-                  //$type: objType,
-                  resolve: field['resolve'] || defaultResolve
-                })
-
-                return fn(root,args,contxt,info)
-              },
-            }
-          })
-
-          if (!_.isEmpty(typeDef)) {
-            gqls.push(dedent`
-              extend type ${schemaName}{
-                ${typeDef}
-              }
-            `)
-          }
-        }
-
-        if (ext.queries) {
-          _.forOwn(ext.queries, (value, key) => {
-            queryDefs += `${key}${value.def}\n`
-            resolvers.Query[key] = async(root, args, context, info) => {
-              return value.resolve(args, context, info, context.getSGContext())
-            }
-          })
-        }
-
-        if (ext.mutations) {
-          _.forOwn(ext.mutations, (value, key) => {
-            mutationDefs += `${key}${value.def}\n`
-            resolvers.Mutation[key] = async(root, args, context, info) => {
-              return value.resolve(args, context, info, context.getSGContext())
-            }
-          })
-        }
-      })
-
-
-      if (queryDefs && queryDefs.length) {
-        gqls.push(dedent`
-          extend type Query {
-            ${queryDefs}
-          }
-        `)
-      }
-
-      if (mutationDefs && mutationDefs.length) {
-        gqls.push(dedent`
-           extend type Mutation {
-             ${mutationDefs}
-           }
-        `)
-      }
-
-
-
-      console.log('gqls:', gqls)
-      console.log('resolver', resolvers)
-
-      return {
-        gqls,
-        resolvers
-      }
-    }
-
-
-    const {gqls, resolvers} = buildLinkInfos(schema,mergeInfo.schemaMerged,mergeInfo.linkInfo,context)
-    let schemas = [schema, mergeInfo.schemaMerged]
-    if (gqls) {
-      let gql = gqls.join(`\n`)
-      if (!_.isEmpty(gql)) {
-        schemas.push(gql)
-      }
-    }
-
-
-    schema = mergeSchemas({
-      schemas,
-      resolvers
-    })
-
-    return schema
-
-  },
-
   /**
    * Build the GraphQL Schema
    */
@@ -229,22 +67,19 @@ const SimpleGraphQL = {
     schemas?:Array<Schema<any>>,
     services?:Array<Service<any>>,
     options?:BuildOptionConfig,
-    mergeInfo?:{
-      schemaMerged:graphql.GraphQLSchema,
-      linkInfo?:{
-        [id:string]: RemoteLinkConfig
-      }
-    }
+    schemaMerged?:graphql.GraphQLSchema,
   }): {graphQLSchema:graphql.GraphQLSchema, sgContext:any} => {
-    const {sequelize, schemas = [], services = [], options = {}, mergeInfo = {}} = args
+    const {sequelize, schemas = [], services = [], options = {}, schemaMerged} = args
     const context = new Context(sequelize, options)
+    if(schemaMerged)
+      context.schemaMerged = schemaMerged
 
     // 添加Schema
     schemas.forEach(schema => {
       context.addSchema(schema)
     })
 
-    // 添加Schema
+    // 添加Service
     services.forEach(service => {
       context.addService(service)
     })
@@ -310,7 +145,6 @@ const SimpleGraphQL = {
       }
       // TODO check whether viewer.type is a Node
     } else {
-      // console.log('begin build other query')
       const fieldConfig = Transformer.toGraphQLFieldConfig(
         'viewer',
         'Payload',
@@ -321,7 +155,6 @@ const SimpleGraphQL = {
         resolve: context.wrapQueryResolve(viewerConfig),
         description: viewerConfig.description
       }
-      // console.log('build result', finalQueries['viewer'])
     }
 
     finalQueries['node'] = {
@@ -353,7 +186,6 @@ const SimpleGraphQL = {
         }
       })
     }
-    // console.log('build result', finalQueries['node'])
 
     const rootQuery = new graphql.GraphQLObjectType({
       name: 'Query',
@@ -375,11 +207,10 @@ const SimpleGraphQL = {
       fields: () => {
         const fields: {[fieldName: string]: graphql.GraphQLFieldConfig<any, any>} = {}
         _.forOwn(context.mutations, (value, key) => {
-          // console.log('begin build mutation:', key, value)
-          const inputFields = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
+          const inputFields  = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
           const outputFields = {}
           const payloadFields = _.get(options, 'mutation.payloadFields', [])
-          for (let field of payloadFields) {
+          for (const field of payloadFields) {
             if (typeof field === 'string') {
               if (!finalQueries[field]) {
                 throw new Error('Incorrect buildOption. Query[' + field + '] not exist.')
@@ -390,13 +221,11 @@ const SimpleGraphQL = {
             }
           }
           _.forOwn(value.outputFields, (fValue, fKey) => {
-            // console.log('begin build mutation outputfiled:', fKey, fValue)
             outputFields[fKey] = Transformer.toGraphQLFieldConfig(
               key + '.' + fKey,
               'Payload',
               fValue,
               context)
-            // console.log('mutation outputfiled result:', outputFields[fKey])
           })
           if (!value['name']) {
             value['name'] = key
@@ -408,7 +237,6 @@ const SimpleGraphQL = {
             mutateAndGetPayload: context.wrapMutateAndGetPayload(value),
             description: value.doc
           })
-          // console.log('mutation result:', fields[key])
         })
         return fields
       }
@@ -419,9 +247,13 @@ const SimpleGraphQL = {
       mutation: rootMutation
     })
 
-    if (!_.isEmpty(mergeInfo) && mergeInfo.schemaMerged) {
-      schema = SimpleGraphQL.makeMergedSchema(schema, mergeInfo, context)
-    }
+
+    schema = mergeAllSchemas(
+      schema,
+      schemaMerged,
+      context.resolvers,
+      context.remote_prefix
+    )
 
 
     return {

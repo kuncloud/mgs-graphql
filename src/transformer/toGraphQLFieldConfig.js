@@ -51,10 +51,10 @@ const toGraphQLFieldConfig = function (name:string,
     const elementType = toGraphQLFieldConfig(name, postfix, fieldType[0], context).type
     const listType = new graphql.GraphQLList(elementType)
     return {
-      type: listType,
+      type:    listType,
       resolve: context.wrapFieldResolve({
-        name: name.split('.').slice(-1)[0],
-        path: name,
+        name:  name.split('.').slice(-1)[0],
+        path:  name,
         $type: listType,
         resolve: async function (root, args, context, info, sgContext) {
           const fieldName = name.split('.').slice(-1)[0]
@@ -81,13 +81,15 @@ const toGraphQLFieldConfig = function (name:string,
   }
 
   if (fieldType instanceof RemoteSchema) {
-    return {type: graphql.GraphQLID}
+    return {
+      type: context.remoteGraphQLObjectType(fieldType.name)
+    }
   }
 
   if (typeof fieldType === 'string') {
     if (fieldType.endsWith('Id')) {
       return {
-        type: graphql.GraphQLID,
+        type:    graphql.GraphQLID,
         resolve: async function (root) {
           const fieldName = name.split('.').slice(-1)[0]
           if (root[fieldName]) {
@@ -124,10 +126,10 @@ const toGraphQLFieldConfig = function (name:string,
       }
     } else {
       return {
-        type: context.graphQLObjectType(fieldType),
+        type:    context.graphQLObjectType(fieldType),
         resolve: context.wrapFieldResolve({
-          name: name.split('.').slice(-1)[0],
-          path: name,
+          name:  name.split('.').slice(-1)[0],
+          path:  name,
           $type: context.graphQLObjectType(fieldType),
           resolve: async function (root, args, context, info, sgContext) {
             const fieldName = name.split('.').slice(-1)[0]
@@ -194,22 +196,24 @@ const toGraphQLFieldConfig = function (name:string,
           const fields = {}
           _.forOwn(fieldType, (value, key) => {
             if (value['$type'] && value['hidden']) {
+
             } else {
               if(remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema)){
-                const schemaId = key + 'Id'
-                console.log(`schema ${name} generate ${schemaId}`)
-                fields[schemaId] = {
+                const linkId = StringHelper.toInitialLowerCase(key) + 'Id'
+                fields[linkId] = {
                   type: graphql.GraphQLID,
                   resolve: async function (root) {
-                    const fieldName = schemaId
-                    if (root[fieldName]) {
-                      return relay.toGlobalId(value['$type'].name , root[fieldName])
+                    if (root[linkId]) {
+                      return relay.toGlobalId(value['$type'].name , root[linkId])
                     } else {
-                      return null
+                      return root[linkId]
                     }
                   }
                 }
+
+                context.addRemoteResolver(name,key,linkId,value['$type'].name)
               }
+
 
               fields[key] = toGraphQLFieldConfig(name + postfix + '.' + key, '', value, context)
             }
