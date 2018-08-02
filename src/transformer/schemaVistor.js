@@ -1,5 +1,5 @@
 // @flow
-import {isOutputType, isObjectType} from 'graphql'
+import {isOutputType ,GraphQLSchema,GraphQLObjectType} from 'graphql'
 import _ from 'lodash'
 import {
   mergeSchemas,
@@ -10,7 +10,9 @@ import {
   SchemaVisitor,
   visitSchema
 } from 'graphql-tools/dist/schemaVisitor'
+import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
+// import instanceOf from '../utils/instanceOf'
 
 class SchemaRemoteVisitor extends SchemaVisitor {
 
@@ -19,14 +21,14 @@ class SchemaRemoteVisitor extends SchemaVisitor {
                        [key: string]: any
                      } = Object.create(null),): void {
     function visitorSelector(type: VisitableSchemaType,
-                             methodName: string,): SchemaDirectiveVisitor[] {
+                             methodName: string,): Array<SchemaRemoteVisitor> {
 
       const visitors = []
       if (methodName != 'visitFieldDefinition')
         return visitors
 
 
-      if (isObjectType(type.type) && type.type.name.startsWith(context.prefix) && !_.isEmpty(type.type.description) && type.type.description.startsWith('{') && type.type.description.endsWith('}')) {
+      if ((type.type instanceof GraphQLObjectType) && type.type.name.startsWith(context.prefix) && !_.isEmpty(type.type.description) && type.type.description.startsWith('{') && type.type.description.endsWith('}')) {
         try {
           const info = JSON.parse(type.type.description)
           if (!_.isEmpty(info)) {
@@ -87,7 +89,8 @@ class RemoteDirective extends SchemaRemoteVisitor {
 }
 
 
-export function mergeAllSchemas(schema:GraphQLSchema, schemaMerged:GraphQLSchema, resolvers:IResolversParameter, prefix:String):GraphQLSchema {
+function mergeAllSchemas(schema:GraphQLSchema, schemaMerged:GraphQLSchema, resolvers:IResolversParameter, prefix:string):GraphQLSchema {
+
   if (_.isEmpty(schemaMerged)) {
     return _.isEmpty(resolvers) ? schema : mergeSchemas({schemas: [schema], resolvers})
   } else {
@@ -96,4 +99,8 @@ export function mergeAllSchemas(schema:GraphQLSchema, schemaMerged:GraphQLSchema
     return all
   }
 
+}
+
+module.exports = {
+  mergeAllSchemas
 }

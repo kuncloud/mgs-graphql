@@ -2,19 +2,15 @@
 
 import Sequelize from 'sequelize'
 import _ from 'lodash'
-import {GraphQLString,printType,GraphQLDirective,DirectiveLocation,GraphQLNonNull,Kind} from 'graphql'
-import * as graphql from 'graphql'
+import {GraphQLSchema,GraphQLObjectType,GraphQLNonNull,GraphQLID,printSchema} from 'graphql'
+import type {GraphQLFieldConfig} from 'graphql'
 import * as relay from 'graphql-relay'
-import {mergeSchemas} from 'graphql-tools'
-import type {IResolversParameter}  from 'graphql-tools'
-
 import invariant from './utils/invariant'
 import Schema from './definition/Schema'
 import Service from './definition/Service'
 import Type from './type'
 import Context from './Context'
 import StringHelper from './utils/StringHelper'
-import dedent from './utils/dedent'
 import Connection from './utils/Connection'
 import Transformer from './transformer'
 import RemoteSchema from './definition/RemoteSchema'
@@ -67,9 +63,11 @@ const SimpleGraphQL = {
     schemas?:Array<Schema<any>>,
     services?:Array<Service<any>>,
     options?:BuildOptionConfig,
-    schemaMerged?:graphql.GraphQLSchema,
-  }): {graphQLSchema:graphql.GraphQLSchema, sgContext:any} => {
-    const {sequelize, schemas = [], services = [], options = {}, schemaMerged} = args
+    schemaMerged?:GraphQLSchema
+  }): {graphQLSchema:GraphQLSchema, sgContext:any} => {
+    const {sequelize, schemas = [], services = [], options = {},schemaMerged={}} = args
+
+
     const context = new Context(sequelize, options)
     if(schemaMerged)
       context.schemaMerged = schemaMerged
@@ -86,10 +84,9 @@ const SimpleGraphQL = {
 
     context.buildModelAssociations()
 
-    const finalQueries: {[fieldName: string]: graphql.GraphQLFieldConfig<any, any>} = {}
+    const finalQueries: {[fieldName: string]: GraphQLFieldConfig<any, any>} = {}
 
     _.forOwn(context.queries, (value, key) => {
-      // console.log('begin build query', key, value)
       const fieldConfig = Transformer.toGraphQLFieldConfig(
         key,
         'Payload',
@@ -108,18 +105,16 @@ const SimpleGraphQL = {
             ...value.args
           })
       }
-      // console.log('build result', key, finalQueries[key])
     })
 
     const viewerConfig = _.get(options, 'query.viewer', 'AllQuery')
     if (viewerConfig === 'AllQuery') {
-      // console.log('begin build AllQuery')
-      context.graphQLObjectTypes['Viewer'] = new graphql.GraphQLObjectType({
+      context.graphQLObjectTypes['Viewer'] = new GraphQLObjectType({
         name: 'Viewer',
         interfaces: [context.nodeInterface],
         fields: () => {
           const fields = {
-            id: {type: new graphql.GraphQLNonNull(graphql.GraphQLID)}
+            id: {type: new GraphQLNonNull(GraphQLID)}
           }
           _.forOwn(finalQueries, (value, key) => {
             if (key !== 'viewer' && key !== 'relay') fields[key] = value
@@ -130,7 +125,7 @@ const SimpleGraphQL = {
 
       finalQueries['viewer'] = {
         description: 'Default Viewer implement to include all queries.',
-        type: new graphql.GraphQLNonNull(((context.graphQLObjectTypes['Viewer']:any):graphql.GraphQLObjectType)),
+        type: new GraphQLNonNull(((context.graphQLObjectTypes['Viewer']:any):GraphQLObjectType)),
         resolve: () => {
           return {
             _type: 'Viewer',
@@ -163,7 +158,7 @@ const SimpleGraphQL = {
       type: context.nodeInterface,
       args: {
         id: {
-          type: new graphql.GraphQLNonNull(graphql.GraphQLID),
+          type: new GraphQLNonNull(GraphQLID),
           description: 'The ID of an object'
         }
       },
@@ -187,7 +182,7 @@ const SimpleGraphQL = {
       })
     }
 
-    const rootQuery = new graphql.GraphQLObjectType({
+    const rootQuery = new GraphQLObjectType({
       name: 'Query',
       fields: () => {
         return finalQueries
@@ -196,16 +191,16 @@ const SimpleGraphQL = {
 
     finalQueries['relay'] = {
       description: 'Hack to workaround https://github.com/facebook/relay/issues/112 re-exposing the root query object',
-      type: new graphql.GraphQLNonNull(rootQuery),
+      type: new GraphQLNonNull(rootQuery),
       resolve: () => {
         return {}
       }
     }
 
-    const rootMutation = new graphql.GraphQLObjectType({
+    const rootMutation = new GraphQLObjectType({
       name: 'Mutation',
       fields: () => {
-        const fields: {[fieldName: string]: graphql.GraphQLFieldConfig<any, any>} = {}
+        const fields: {[fieldName: string]: GraphQLFieldConfig<any, any>} = {}
         _.forOwn(context.mutations, (value, key) => {
           const inputFields  = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
           const outputFields = {}
@@ -242,7 +237,7 @@ const SimpleGraphQL = {
       }
     })
 
-    let schema = new graphql.GraphQLSchema({
+    let schema = new GraphQLSchema({
       query: rootQuery,
       mutation: rootMutation
     })

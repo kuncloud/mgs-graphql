@@ -1,17 +1,18 @@
 // @flow
 import Sequelize from 'sequelize'
-import * as graphql from 'graphql'
+// import * as graphql from 'graphql'
 import * as relay from 'graphql-relay'
 import _ from 'lodash'
+import {GraphQLSchema,GraphQLInterfaceType,GraphQLObjectType,GraphQLNonNull,GraphQLFloat,GraphQLID,GraphQLString} from 'graphql'
+import type {GraphQLFieldConfig,GraphQLResolveInfo} from 'graphql'
 
-import type {GraphQLObjectType} from 'graphql'
 
 import Schema from './definition/Schema'
 import Service from './definition/Service'
 import StringHelper from './utils/StringHelper'
 import invariant from './utils/invariant'
 import Transformer from './transformer'
-import type {IResolversParameter} from 'graphql-tools'
+import type {IResolversParameter,MergeInfo} from 'graphql-tools'
 
 import SequelizeContext from './sequelize/SequelizeContext'
 
@@ -24,7 +25,7 @@ export type QueryConfig ={
   args?:ArgsType,
   resolve: (args: {[argName: string]: any},
             context: any,
-            info: graphql.GraphQLResolveInfo,
+            info: GraphQLResolveInfo,
             sgContext: SGContext) => any
 }
 
@@ -35,7 +36,7 @@ export type MutationConfig ={
   outputFields:{[string]:LinkedFieldType},
   mutateAndGetPayload:(args: {[argName: string]: any},
                        context: any,
-                       info: graphql.GraphQLResolveInfo,
+                       info: GraphQLResolveInfo,
                        sgContext: SGContext) => any
 }
 
@@ -46,7 +47,7 @@ export default class Context {
 
   dbModels: {[id:string]:Sequelize.Model}
 
-  nodeInterface: graphql.GraphQLInterfaceType
+  nodeInterface: GraphQLInterfaceType
 
   schemas: {[id:string]: Schema<any>}
 
@@ -58,13 +59,15 @@ export default class Context {
 
   mutations: {[id:string]:MutationConfig}
 
-  connectionDefinitions: {[id:string]:{connectionType:graphql.GraphQLObjectType, edgeType:graphql.GraphQLObjectType}}
+  connectionDefinitions: {[id:string]:{connectionType:GraphQLObjectType, edgeType:GraphQLObjectType}}
 
   resolvers: IResolversParameter
 
-  remote_prefix: String
+  remote_prefix: string
 
-  constructor(sequelize: Sequelize, options: BuildOptionConfig, remoteObjs: {[id:string]: GraphQLObjectType} = {}) {
+  schemaMerged: GraphQLSchema
+  
+  constructor(sequelize: Sequelize, options: BuildOptionConfig, schemaTarget?: GraphQLSchema) {
     this.dbContext = new SequelizeContext(sequelize)
     this.options = {...options}
 
@@ -76,8 +79,6 @@ export default class Context {
     this.mutations = {}
 
     this.connectionDefinitions = {}
-
-    // this.graphQLObjectType('City')
 
     const self = this
     this.nodeInterface = relay.nodeDefinitions((globalId) => {
@@ -93,7 +94,9 @@ export default class Context {
       Mutation: {}
     }
 
+    this.schemaMerged = schemaTarget
     this.remote_prefix = '_remote_'
+
 
 
   }
@@ -108,7 +111,7 @@ export default class Context {
 
 
 
-  addRemoteResolver(schemaName:String, fieldName:String, linkId:String, target:String){
+  addRemoteResolver(schemaName:string, fieldName:string, linkId:string, target:string){
     if (!this.resolvers[schemaName])
       this.resolvers[schemaName] = {}
 
@@ -116,12 +119,12 @@ export default class Context {
     this.resolvers[schemaName][fieldName] = {
       fragment: `... on ${schemaName} { ${linkId} }`,
       resolve(root, args, context, info) {
-        if(self.schemaMerged){
+        if(!_.isEmpty(self.schemaMerged)){
           const fn = self.wrapFieldResolve({
             name:  fieldName,
-            path:  null,
-            $type: null,
-            resolve: async function (root, args, context, info) {
+            path:  self.remoteGraphQLObjectType(target),
+            $type: String,
+            resolve: async function (root, args, context, info, sgContext) {
               if (root && root[linkId] && (
                   typeof root[linkId] === 'number' ||
                   typeof root[linkId] === 'string'
@@ -243,11 +246,11 @@ export default class Context {
   remoteGraphQLObjectType(name: string): GraphQLObjectType {
     const typeName = this.remote_prefix + name
     if (!this.graphQLObjectTypes[typeName]) {
-      const objectType = new graphql.GraphQLObjectType({
+      const objectType = new GraphQLObjectType({
         name: typeName,
         fields: {
           'id': {
-            type: graphql.GraphQLString,
+            type: GraphQLString,
             resolve: () => 'not supported'
           }
         },//TODO support arguments
@@ -277,14 +280,14 @@ export default class Context {
         id: {}
       }, model.config.fields, model.config.links)
       obj.id = {
-        $type: new graphql.GraphQLNonNull(graphql.GraphQLID),
+        $type: new GraphQLNonNull(GraphQLID),
         resolve: async function (root) {
           return relay.toGlobalId(StringHelper.toInitialUpperCase(model.name), root.id)
         }
       }
       const interfaces = [this.nodeInterface]
       const objectType = Transformer.toGraphQLFieldConfig(typeName, '', obj, this, interfaces, true).type
-      if (objectType instanceof graphql.GraphQLObjectType) {
+      if (objectType instanceof GraphQLObjectType) {
         objectType.description = model.config.options.description
         this.graphQLObjectTypes[typeName] = objectType
       } else {
@@ -352,7 +355,7 @@ export default class Context {
     resolve: (source: any,
               args: {[argName: string]: any},
               context: any,
-              info: graphql.GraphQLResolveInfo,
+              info: GraphQLResolveInfo & {mergeInfo: MergeInfo},
               sgContext: SGContext) => any
   }): any {
     const self = this
@@ -407,14 +410,14 @@ export default class Context {
     )
   }
 
-  connectionDefinition(schemaName: string): {connectionType:graphql.GraphQLObjectType, edgeType:graphql.GraphQLObjectType} {
+  connectionDefinition(schemaName: string): {connectionType:GraphQLObjectType, edgeType:GraphQLObjectType} {
     if (!this.connectionDefinitions[schemaName]) {
       this.connectionDefinitions[schemaName] = relay.connectionDefinitions({
         name: StringHelper.toInitialUpperCase(schemaName),
         nodeType: this.graphQLObjectType(schemaName),
         connectionFields: {
           count: {
-            type: graphql.GraphQLFloat
+            type: GraphQLFloat
           }
         }
       })
@@ -422,11 +425,11 @@ export default class Context {
     return this.connectionDefinitions[schemaName]
   }
 
-  connectionType(schemaName: string): graphql.GraphQLObjectType {
+  connectionType(schemaName: string): GraphQLObjectType {
     return this.connectionDefinition(schemaName).connectionType
   }
 
-  edgeType(schemaName: string): graphql.GraphQLObjectType {
+  edgeType(schemaName: string): GraphQLObjectType {
     return this.connectionDefinition(schemaName).edgeType
   }
 

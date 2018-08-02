@@ -212,12 +212,15 @@ export type SchemaOptionConfig = {
       method?:'USING' | 'USING' | 'HASH' | 'GIST' | 'GIN',
       unique?:boolean,
       concurrently?:boolean,
-      fields?:Array<string | {
-        attribute?:string,
-        length?:number,
-        order?:'ASC' | 'DESC',
-        collate?:string
-      }>
+      fields?:Array<string>
+      /*
+       | {
+       attribute?:string,
+       length?:number,
+       order?:'ASC' | 'DESC',
+       collate?:string
+       }
+      */
     }>,
     tableName?:string,
     getterMethods?:{[string]:() => any},

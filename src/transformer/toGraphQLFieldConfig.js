@@ -16,7 +16,7 @@ const toGraphQLFieldConfig = function (name:string,
                                        fieldType:any,
                                        context:Context,
                                        interfaces:any = [],
-                                       remoteWithId = false
+                                       remoteWithId:boolean = false
 ):{
   type: GraphQLOutputType,
   args?: {[string]:any},
