@@ -107,7 +107,17 @@ export default class Context {
       sequelize: this.dbContext.sequelize,
       models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
       services: _.mapValues(this.services, (service) => service.config.statics),
-      bindings: this.remoteInfo['binding']
+      bindings: {
+        toGId:  (type, id) => relay.toGlobalId(type, id),
+        toDbId: (type, id) => {
+          const gid = relay.fromGlobalId(id)
+          if (gid.type !== type) {
+            throw new Error(`错误的global id,type:${type},gid:${id}`)
+          }
+          return gid.id
+        },
+        ...this.remoteInfo['binding']
+      }
     }
   }
 
