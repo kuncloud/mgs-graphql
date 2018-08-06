@@ -1,5 +1,7 @@
 // @flow
 import {HttpLink} from 'apollo-link-http'
+import {GraphQLSchema,GraphQLObjectType,assertValidSchema,GraphQLID,printSchema} from 'graphql'
+import type {GraphQLFieldConfig} from 'graphql'
 import {introspectSchema, makeRemoteExecutableSchema} from 'graphql-tools'
 import fetch from 'node-fetch'
 import path from 'path'
@@ -8,47 +10,81 @@ import {Binding} from 'graphql-binding'
 import {toGlobalId, fromGlobalId} from 'graphql-relay'
 import _ from 'lodash'
 
-const protocol = 'http'
+const protocol:string = 'http'
 
-async function remoteSchemasFromURI(endPoint: String) {
+
+
+async function remoteSchemasFromURI(endPoint: String):GraphQLSchema {
   console.log('remoteSchemasFromURI call:', endPoint)
   const link    = new HttpLink({uri: endPoint, fetch})
   const rSchema = await introspectSchema(link)
   const schema  = makeRemoteExecutableSchema({
     schema: rSchema,
-    link: link
+    link:   link
   })
-
+  assertValidSchema(schema)
   return schema
 }
 
-function remoteSchemasFromFile(endPoint: String, gqlFile: String) {
-  console.log('remoteSchemasFromFile call:', endPoint,gqlFile)
+function remoteSchemasFromFile(endPoint: string, gqlFile: string):GraphQLSchema {
+  console.log('remoteSchemasFromFile call:', endPoint,gqlFile,__dirname)
 
-  const gql    = fs.readFileSync(path.resolve(__dirname,gqlFile),{flag:'r+',encoding:'utf-8'})
-  console.log(gql)
-  const link   = new HttpLink({uri: endPoint, fetch})
-  const schema = makeRemoteExecutableSchema({
+  const gql:string    = fs.readFileSync(path.resolve(__dirname,gqlFile),{flag:'r+',encoding:'utf-8'})
+  // console.log(gql)
+  const link:HttpLink   = new HttpLink({uri: endPoint, fetch})
+  const schema:GraphQLSchema = makeRemoteExecutableSchema({
     schema: gql,
     link:   link
   })
+  assertValidSchema(schema)
   return schema
 }
 
-function endPoint({host, port, path}) {
+function endPoint({host, port, path}:{host:string,port:string,path:string}):string {
   return `${protocol}://${host}:${port}/${path}`
 }
 
 
 class MyBinding extends Binding {
-  constructor(schema) {
+  constructor(schema:GraphQLSchema) {
     super({
       schema: schema
     })
   }
 }
 
-function buildBindings(cfg) {
+
+export type RemoteConfig = {
+  [key:string]:{
+    uri:{
+      host: string,
+      port: string,
+      path: string
+    },
+    gql?:{
+      path: string
+    }
+  },
+  __proto__: null
+}
+
+
+// const EndPoints = {
+//   common: {
+//     uri: {
+//       host: '127.0.0.1',
+//       port: '4002',
+//       path: 'graphql'
+//     },
+//     gql:{
+//       path:'gql/common.gql'
+//     }
+//   }
+// }
+export  function buildBindings(cfg:RemoteConfig):{[key:string]:any} {
+  if(_.isEmpty(cfg))
+    return {}
+
   const binding = {
     toGId:  (type, id) => toGlobalId(type, id),
     toDbId: (type, id) => {
@@ -61,20 +97,28 @@ function buildBindings(cfg) {
   }
 
   _.forOwn(cfg,(value, key) => {
-    console.log('binding cfg:',key,value)
-    binding[key] = new MyBinding(remoteSchemasFromFile(endPoint(value.uri),value.gql.path))
+    // console.log('binding cfg:',key,value)
+    const schema = remoteSchemasFromFile(endPoint(value.uri),value.gql.path)
+    // const schema = await remoteSchemasFromURI(endPoint(value.uri))
+    binding['schema'] = {
+      ...binding['schema'],
+      [key]:schema
+    }
+
+    binding['binding'] = {
+      ...binding['binding'],
+      [key]:new MyBinding(schema)
+    }
+
   })
 
   return binding
 }
 
 
-
-
-
-module.exports = {
-  buildBindings,
-  endPoint,
-  remoteSchemasFromURI,
-  remoteSchemasFromFile
-}
+// module.exports = {
+//   buildBindings,
+//   endPoint,
+//   remoteSchemasFromURI,
+//   remoteSchemasFromFile
+// }

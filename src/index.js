@@ -16,6 +16,8 @@ import Transformer from './transformer'
 import RemoteSchema from './definition/RemoteSchema'
 import type {SchemaOptionConfig, BuildOptionConfig, RemoteLinkConfig} from './Definition'
 import {mergeAllSchemas} from './transformer/schemaVistor'
+export type {RemoteConfig} from './utils/remote'
+import {buildBindings} from './utils/remote'
 
 
 const SimpleGraphQL = {
@@ -63,14 +65,12 @@ const SimpleGraphQL = {
     schemas?:Array<Schema<any>>,
     services?:Array<Service<any>>,
     options?:BuildOptionConfig,
-    schemaMerged?:GraphQLSchema
+    remoteCfg?:RemoteConfig
   }): {graphQLSchema:GraphQLSchema, sgContext:any} => {
-    const {sequelize, schemas = [], services = [], options = {},schemaMerged={}} = args
+    const {sequelize, schemas = [], services = [], options = {},remoteCfg={}} = args
 
+    const context = new Context(sequelize, options,remoteCfg)
 
-    const context = new Context(sequelize, options)
-    if(schemaMerged)
-      context.schemaMerged = schemaMerged
 
     // 添加Schema
     schemas.forEach(schema => {
@@ -133,7 +133,7 @@ const SimpleGraphQL = {
           }
         }
       }
-      // console.log('build result', finalQueries['viewer'])
+
     } else if (viewerConfig === 'FromModelQuery') {
       if (!finalQueries['viewer']) {
         throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
@@ -238,10 +238,16 @@ const SimpleGraphQL = {
     })
 
     let schema = new GraphQLSchema({
-      query: rootQuery,
+      query:    rootQuery,
       mutation: rootMutation
     })
 
+    let schemaMerged = []
+    if(!_.isEmpty(context.remoteInfo) && !_.isEmpty(context.remoteInfo['schema'])){
+      _.forOwn(context.remoteInfo['schema'],(value,key) => {
+        schemaMerged.push(value)
+      })
+    }
 
     schema = mergeAllSchemas(
       schema,

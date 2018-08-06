@@ -1,0 +1,974 @@
+input AddAliOssInput {
+  key: String!
+  value: String!
+  expiration: Date!
+  clientMutationId: String!
+}
+
+type AddAliOssPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  addedAliOssEdge: AliOssEdge
+  clientMutationId: String!
+}
+
+input AddExpressCompanyInput {
+  """公司名字"""
+  name: String!
+
+  """公司编码"""
+  code: String!
+
+  """备注信息"""
+  remark: String
+
+  """国家英文"""
+  en: String
+  clientMutationId: String!
+}
+
+type AddExpressCompanyPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  addedExpressCompanyEdge: ExpressCompanyEdge
+  clientMutationId: String!
+}
+
+"""ali-oss的配置，token"""
+type AliOss implements Node {
+  id: ID!
+  key: String!
+  value: String!
+  expiration: Date!
+  createdAt: Date
+  updatedAt: Date
+}
+
+"""A connection to a list of items."""
+type AliOssConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [AliOssEdge]
+  count: Float
+}
+
+"""An edge in a connection."""
+type AliOssEdge {
+  """The item at the end of the edge"""
+  node: AliOss
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
+
+"""Global id of AliOss"""
+scalar AliOssId
+
+input AliOsssConditionInput {
+  key: String
+  value: String
+  expiration: DateConditionInput
+}
+
+input AliOsssKeywordsInput {
+  fields: [String]!
+  value: String!
+}
+
+input AliOsssSortInput {
+  field: String
+  order: SortOrder
+}
+
+input CheckSmsCodeInput {
+  phoneNumber: String!
+
+  """默认值:86"""
+  countryCode: String = "86"
+  code: String!
+  clientMutationId: String!
+}
+
+type CheckSmsCodePayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  match: Boolean
+  reason: String
+  clientMutationId: String!
+}
+
+"""城市"""
+type City implements Node {
+  id: ID!
+
+  """城市名"""
+  name: String
+
+  """城市编码"""
+  code: String
+
+  """所属省id"""
+  province: Province!
+
+  """邮政编码"""
+  postCode: String
+
+  """已激活的：只有当该区域创建了诊所时，该区域自动变为可用"""
+  activated: Boolean
+  createdAt: Date
+  updatedAt: Date
+  districts(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+  ): DistrictConnection
+}
+
+"""A connection to a list of items."""
+type CityConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [CityEdge]
+  count: Float
+}
+
+"""An edge in a connection."""
+type CityEdge {
+  """The item at the end of the edge"""
+  node: City
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
+
+"""Global id of City"""
+scalar CityId
+
+input CitysConditionInput {
+  """城市名"""
+  name: String
+
+  """城市编码"""
+  code: String
+
+  """所属省id"""
+  provinceId: ProvinceId
+
+  """邮政编码"""
+  postCode: String
+
+  """已激活的：只有当该区域创建了诊所时，该区域自动变为可用"""
+  activated: Boolean
+}
+
+input CitysKeywordsInput {
+  fields: [String]!
+  value: String!
+}
+
+input CitysSortInput {
+  field: String
+  order: SortOrder
+}
+
+scalar Date
+
+input DateConditionInput {
+  """大于或等于"""
+  gte: Date
+
+  """小于或等于"""
+  lte: Date
+
+  """大于"""
+  gt: Date
+
+  """小于"""
+  lt: Date
+
+  """不等于"""
+  ne: Date
+
+  """等于"""
+  eq: Date
+}
+
+input DeleteAliOssInput {
+  id: AliOssId!
+  clientMutationId: String!
+}
+
+type DeleteAliOssPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  ok: Boolean
+  deletedAliOss: AliOss
+  deletedAliOssId: ID
+  clientMutationId: String!
+}
+
+input DeleteExpressCompanyInput {
+  id: ExpressCompanyId!
+  clientMutationId: String!
+}
+
+type DeleteExpressCompanyPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  ok: Boolean
+  deletedExpressCompany: ExpressCompany
+  deletedExpressCompanyId: ID
+  clientMutationId: String!
+}
+
+"""区"""
+type District implements Node {
+  id: ID!
+
+  """区名"""
+  name: String
+
+  """编码"""
+  code: String
+
+  """所属市"""
+  city: City!
+
+  """邮编"""
+  postCode: String
+  createdAt: Date
+  updatedAt: Date
+}
+
+"""A connection to a list of items."""
+type DistrictConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [DistrictEdge]
+  count: Float
+}
+
+"""An edge in a connection."""
+type DistrictEdge {
+  """The item at the end of the edge"""
+  node: District
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
+
+"""Global id of District"""
+scalar DistrictId
+
+input DistrictsConditionInput {
+  """区名"""
+  name: String
+
+  """编码"""
+  code: String
+
+  """所属市"""
+  cityId: CityId
+
+  """邮编"""
+  postCode: String
+}
+
+input DistrictsKeywordsInput {
+  fields: [String]!
+  value: String!
+}
+
+input DistrictsSortInput {
+  field: String
+  order: SortOrder
+}
+
+"""邮件记录"""
+type EmailLog implements Node {
+  id: ID!
+
+  """主题"""
+  subject: String!
+
+  """内容"""
+  content: String
+
+  """接收者"""
+  toEmails: String!
+
+  """发送者"""
+  fromEmail: String!
+
+  """内容是否是html"""
+  isHtml: Boolean
+
+  """是否有附件"""
+  hasAttachments: Boolean
+
+  """发送状态"""
+  sendResult: Boolean
+
+  """失败原因"""
+  failureReason: String
+  createdAt: Date
+  updatedAt: Date
+}
+
+"""A connection to a list of items."""
+type EmailLogConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [EmailLogEdge]
+  count: Float
+}
+
+"""An edge in a connection."""
+type EmailLogEdge {
+  """The item at the end of the edge"""
+  node: EmailLog
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
+
+"""Global id of EmailLog"""
+scalar EmailLogId
+
+input EmailLogsConditionInput {
+  """主题"""
+  subject: String
+
+  """内容"""
+  content: String
+
+  """接收者"""
+  toEmails: String
+
+  """发送者"""
+  fromEmail: String
+
+  """内容是否是html"""
+  isHtml: Boolean
+
+  """是否有附件"""
+  hasAttachments: Boolean
+
+  """发送状态"""
+  sendResult: Boolean
+
+  """失败原因"""
+  failureReason: String
+}
+
+input EmailLogsKeywordsInput {
+  fields: [String]!
+  value: String!
+}
+
+input EmailLogsSortInput {
+  field: String
+  order: SortOrder
+}
+
+"""快递公司编码，快递100使用"""
+type ExpressCompany implements Node {
+  id: ID!
+
+  """公司名字"""
+  name: String!
+
+  """公司编码"""
+  code: String!
+
+  """备注信息"""
+  remark: String
+
+  """国家英文"""
+  en: String
+  createdAt: Date
+  updatedAt: Date
+}
+
+"""A connection to a list of items."""
+type ExpressCompanyConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [ExpressCompanyEdge]
+  count: Float
+}
+
+"""An edge in a connection."""
+type ExpressCompanyEdge {
+  """The item at the end of the edge"""
+  node: ExpressCompany
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
+
+"""Global id of ExpressCompany"""
+scalar ExpressCompanyId
+
+input ExpressCompanysConditionInput {
+  """公司名字"""
+  name: String
+
+  """公司编码"""
+  code: String
+
+  """备注信息"""
+  remark: String
+
+  """国家英文"""
+  en: String
+}
+
+input ExpressCompanysKeywordsInput {
+  fields: [String]!
+  value: String!
+}
+
+input ExpressCompanysSortInput {
+  field: String
+  order: SortOrder
+}
+
+type GetAliOssSignaturePayload {
+  credentials: String
+}
+
+type Mutation {
+  addAliOss(input: AddAliOssInput!): AddAliOssPayload
+  updateAliOss(input: UpdateAliOssInput!): UpdateAliOssPayload
+  deleteAliOss(input: DeleteAliOssInput!): DeleteAliOssPayload
+  sendEmail(input: SendEmailInput!): SendEmailPayload
+  addExpressCompany(input: AddExpressCompanyInput!): AddExpressCompanyPayload
+  updateExpressCompany(input: UpdateExpressCompanyInput!): UpdateExpressCompanyPayload
+  deleteExpressCompany(input: DeleteExpressCompanyInput!): DeleteExpressCompanyPayload
+  sendSmsCode(input: SendSmsCodeInput!): SendSmsCodePayload
+  checkSmsCode(input: CheckSmsCodeInput!): CheckSmsCodePayload
+  sendSameSms(input: SendSameSmsInput!): SendSameSmsPayload
+}
+
+"""An object with an ID"""
+interface Node {
+  """The id of the object."""
+  id: ID!
+}
+
+"""Information about pagination in a connection."""
+type PageInfo {
+  """When paginating forwards, are there more items?"""
+  hasNextPage: Boolean!
+
+  """When paginating backwards, are there more items?"""
+  hasPreviousPage: Boolean!
+
+  """When paginating backwards, the cursor to continue."""
+  startCursor: String
+
+  """When paginating forwards, the cursor to continue."""
+  endCursor: String
+}
+
+"""省"""
+type Province implements Node {
+  id: ID!
+
+  """省名"""
+  name: String
+
+  """编码"""
+  code: String
+
+  """已激活的：只有当该区域创建了诊所时，该区域自动变为可用"""
+  activated: Boolean
+  createdAt: Date
+  updatedAt: Date
+  cities(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+  ): CityConnection
+}
+
+"""A connection to a list of items."""
+type ProvinceConnection {
+  """Information to aid in pagination."""
+  pageInfo: PageInfo!
+
+  """A list of edges."""
+  edges: [ProvinceEdge]
+  count: Float
+}
+
+"""An edge in a connection."""
+type ProvinceEdge {
+  """The item at the end of the edge"""
+  node: Province
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
+
+"""Global id of Province"""
+scalar ProvinceId
+
+input ProvincesConditionInput {
+  """省名"""
+  name: String
+
+  """编码"""
+  code: String
+
+  """已激活的：只有当该区域创建了诊所时，该区域自动变为可用"""
+  activated: Boolean
+}
+
+input ProvincesKeywordsInput {
+  fields: [String]!
+  value: String!
+}
+
+input ProvincesSortInput {
+  field: String
+  order: SortOrder
+}
+
+type Query {
+  """获取阿里云的signature"""
+  getAliOssSignature: GetAliOssSignaturePayload
+  aliOss(
+    """Id of Schema AliOss"""
+    id: AliOssId
+  ): AliOss
+  aliOsss(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: AliOsssConditionInput
+
+    """Define the sort field"""
+    sort: [AliOsssSortInput]
+    keywords: AliOsssKeywordsInput
+  ): AliOssConnection
+  city(
+    """Id of Schema City"""
+    id: CityId
+  ): City
+  citys(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: CitysConditionInput
+
+    """Define the sort field"""
+    sort: [CitysSortInput]
+    keywords: CitysKeywordsInput
+  ): CityConnection
+  district(
+    """Id of Schema District"""
+    id: DistrictId
+  ): District
+  districts(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: DistrictsConditionInput
+
+    """Define the sort field"""
+    sort: [DistrictsSortInput]
+    keywords: DistrictsKeywordsInput
+  ): DistrictConnection
+  emailLog(
+    """Id of Schema EmailLog"""
+    id: EmailLogId
+  ): EmailLog
+  emailLogs(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: EmailLogsConditionInput
+
+    """Define the sort field"""
+    sort: [EmailLogsSortInput]
+    keywords: EmailLogsKeywordsInput
+  ): EmailLogConnection
+  expressCompany(
+    """Id of Schema ExpressCompany"""
+    id: ExpressCompanyId
+  ): ExpressCompany
+  expressCompanys(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: ExpressCompanysConditionInput
+
+    """Define the sort field"""
+    sort: [ExpressCompanysSortInput]
+    keywords: ExpressCompanysKeywordsInput
+  ): ExpressCompanyConnection
+  province(
+    """Id of Schema Province"""
+    id: ProvinceId
+  ): Province
+  provinces(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: ProvincesConditionInput
+
+    """Define the sort field"""
+    sort: [ProvincesSortInput]
+    keywords: ProvincesKeywordsInput
+  ): ProvinceConnection
+  smsCode(
+    """Id of Schema SmsCode"""
+    id: SmsCodeId
+  ): SmsCode
+
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+
+  """Fetches an object given its ID"""
+  node(
+    """The ID of an object"""
+    id: ID!
+  ): Node
+
+  """
+  Hack to workaround https://github.com/facebook/relay/issues/112 re-exposing the root query object
+  """
+  relay: Query!
+}
+
+input SendEmailInput {
+  """主题"""
+  subject: String!
+
+  """内容"""
+  content: String!
+
+  """接收者"""
+  toEmails: [String]!
+
+  """是否是html 默认值:false"""
+  isHtml: Boolean = false
+  clientMutationId: String!
+}
+
+type SendEmailPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  sendResult: Boolean
+  clientMutationId: String!
+}
+
+type SendSameSmsDataPayload {
+  code: Int
+  mobile: String
+  msg: String
+  sid: String
+}
+
+input SendSameSmsInput {
+  phoneNumber: [String]
+  content: String!
+  clientMutationId: String!
+}
+
+type SendSameSmsPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  totalFee: String
+  unit: String
+  data: [SendSameSmsDataPayload]
+  clientMutationId: String!
+}
+
+type SendSmsCodeErrorPayload {
+  code: Float
+  reason: String
+}
+
+input SendSmsCodeInput {
+  phoneNumber: String!
+
+  """默认值:86"""
+  countryCode: String = "86"
+
+  """验证码类型，BINDUSER：绑定手机号；CODE：获取验证码"""
+  type: SendSmsCodeType
+  clientMutationId: String!
+}
+
+type SendSmsCodePayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  error: SendSmsCodeErrorPayload
+  sentAt: Date
+  clientMutationId: String!
+}
+
+enum SendSmsCodeType {
+  BINDUSER
+  CODE
+}
+
+type SmsCode implements Node {
+  id: ID!
+  phoneNumber: String!
+  countryCode: String!
+  sentAt: Date
+  createdAt: Date
+  updatedAt: Date
+}
+
+"""Global id of SmsCode"""
+scalar SmsCodeId
+
+enum SortOrder {
+  """递增排序"""
+  ASC
+
+  """递减排序"""
+  DESC
+}
+
+input UpdateAliOssInput {
+  id: AliOssId!
+  values: UpdateAliOssValuesInput
+  clientMutationId: String!
+}
+
+type UpdateAliOssPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  changedAliOss: AliOss
+  clientMutationId: String!
+}
+
+input UpdateAliOssValuesInput {
+  key: String
+  value: String
+  expiration: Date
+}
+
+input UpdateExpressCompanyInput {
+  id: ExpressCompanyId!
+  values: UpdateExpressCompanyValuesInput
+  clientMutationId: String!
+}
+
+type UpdateExpressCompanyPayload {
+  """Default Viewer implement to include all queries."""
+  viewer: Viewer!
+  changedExpressCompany: ExpressCompany
+  clientMutationId: String!
+}
+
+input UpdateExpressCompanyValuesInput {
+  """公司名字"""
+  name: String
+
+  """公司编码"""
+  code: String
+
+  """备注信息"""
+  remark: String
+
+  """国家英文"""
+  en: String
+}
+
+type Viewer implements Node {
+  id: ID!
+
+  """获取阿里云的signature"""
+  getAliOssSignature: GetAliOssSignaturePayload
+  aliOss(
+    """Id of Schema AliOss"""
+    id: AliOssId
+  ): AliOss
+  aliOsss(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: AliOsssConditionInput
+
+    """Define the sort field"""
+    sort: [AliOsssSortInput]
+    keywords: AliOsssKeywordsInput
+  ): AliOssConnection
+  city(
+    """Id of Schema City"""
+    id: CityId
+  ): City
+  citys(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: CitysConditionInput
+
+    """Define the sort field"""
+    sort: [CitysSortInput]
+    keywords: CitysKeywordsInput
+  ): CityConnection
+  district(
+    """Id of Schema District"""
+    id: DistrictId
+  ): District
+  districts(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: DistrictsConditionInput
+
+    """Define the sort field"""
+    sort: [DistrictsSortInput]
+    keywords: DistrictsKeywordsInput
+  ): DistrictConnection
+  emailLog(
+    """Id of Schema EmailLog"""
+    id: EmailLogId
+  ): EmailLog
+  emailLogs(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: EmailLogsConditionInput
+
+    """Define the sort field"""
+    sort: [EmailLogsSortInput]
+    keywords: EmailLogsKeywordsInput
+  ): EmailLogConnection
+  expressCompany(
+    """Id of Schema ExpressCompany"""
+    id: ExpressCompanyId
+  ): ExpressCompany
+  expressCompanys(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: ExpressCompanysConditionInput
+
+    """Define the sort field"""
+    sort: [ExpressCompanysSortInput]
+    keywords: ExpressCompanysKeywordsInput
+  ): ExpressCompanyConnection
+  province(
+    """Id of Schema Province"""
+    id: ProvinceId
+  ): Province
+  provinces(
+    """返回的记录应该在cursor:after之后"""
+    after: String
+
+    """指定最多返回记录的数量"""
+    first: Float
+    before: String
+    last: Float
+
+    """Query Condition"""
+    condition: ProvincesConditionInput
+
+    """Define the sort field"""
+    sort: [ProvincesSortInput]
+    keywords: ProvincesKeywordsInput
+  ): ProvinceConnection
+  smsCode(
+    """Id of Schema SmsCode"""
+    id: SmsCodeId
+  ): SmsCode
+
+  """Fetches an object given its ID"""
+  node(
+    """The ID of an object"""
+    id: ID!
+  ): Node
+}

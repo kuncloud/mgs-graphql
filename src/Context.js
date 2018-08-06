@@ -17,6 +17,8 @@ import type {IResolversParameter,MergeInfo} from 'graphql-tools'
 import SequelizeContext from './sequelize/SequelizeContext'
 
 import type {SGContext, LinkedFieldType, ArgsType, BuildOptionConfig} from './Definition'
+import type {RemoteConfig} from './utils/remote'
+import {buildBindings} from './utils/remote'
 
 export type QueryConfig ={
   name:string,
@@ -65,9 +67,9 @@ export default class Context {
 
   remote_prefix: string
 
-  schemaMerged: GraphQLSchema
-  
-  constructor(sequelize: Sequelize, options: BuildOptionConfig, schemaTarget?: GraphQLSchema) {
+  remoteInfo:{[id:string]:any}
+
+  constructor(sequelize: Sequelize, options: BuildOptionConfig, remoteCfg: RemoteConfig) {
     this.dbContext = new SequelizeContext(sequelize)
     this.options = {...options}
 
@@ -94,24 +96,39 @@ export default class Context {
       Mutation: {}
     }
 
-    this.schemaMerged = schemaTarget
+    this.remoteInfo = buildBindings(remoteCfg)
     this.remote_prefix = '_remote_'
-
-
 
   }
 
   getSGContext() {
+    // console.log('bindings:',this.remoteInfo['binding'])
     return {
       sequelize: this.dbContext.sequelize,
       models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
-      services: _.mapValues(this.services, (service) => service.config.statics)
+      services: _.mapValues(this.services, (service) => service.config.statics),
+      bindings: this.remoteInfo['binding']
     }
   }
 
+  getTargetSchema(modeName:string):GraphQLSchema{
+    if(!this.remoteInfo['schema'])
+      return
+
+    let target = undefined
+    _.forOwn(this.remoteInfo['schema'],(value,key) => {
+      if(value && value.getType(modeName)){
+        target = value
+        return false
+      }
+    })
+
+    return target
+  }
 
 
   addRemoteResolver(schemaName:string, fieldName:string, linkId:string, target:string){
+    // console.log('addRemoteResolver1:',schemaName,fieldName)
     if (!this.resolvers[schemaName])
       this.resolvers[schemaName] = {}
 
@@ -119,18 +136,19 @@ export default class Context {
     this.resolvers[schemaName][fieldName] = {
       fragment: `... on ${schemaName} { ${linkId} }`,
       resolve(root, args, context, info) {
-        if(!_.isEmpty(self.schemaMerged)){
+        const targetSchema = self.getTargetSchema(target)
+        if(!_.isEmpty(targetSchema)){
           const fn = self.wrapFieldResolve({
             name:  fieldName,
-            path:  self.remoteGraphQLObjectType(target),
-            $type: String,
+            path:  fieldName,
+            $type: self.remoteGraphQLObjectType(target),
             resolve: async function (root, args, context, info, sgContext) {
               if (root && root[linkId] && (
                   typeof root[linkId] === 'number' ||
                   typeof root[linkId] === 'string'
                 )) {
                 return info.mergeInfo.delegateToSchema({
-                  schema:     self.schemaMerged,
+                  schema:     targetSchema,
                   operation:  'query',
                   fieldName:  StringHelper.toInitialLowerCase(target),
                   args: {
@@ -251,7 +269,10 @@ export default class Context {
         fields: {
           'id': {
             type: GraphQLString,
-            resolve: () => 'not supported'
+            resolve: (root) => {
+              console.log('fake id',root)
+              return 'MGS only fake ,not supported'
+            }
           }
         },//TODO support arguments
         description: JSON.stringify({

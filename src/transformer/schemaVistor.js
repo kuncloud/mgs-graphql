@@ -1,5 +1,5 @@
 // @flow
-import {isOutputType ,GraphQLSchema,GraphQLObjectType} from 'graphql'
+import {isOutputType, GraphQLSchema, GraphQLObjectType} from 'graphql'
 import _ from 'lodash'
 import {
   mergeSchemas,
@@ -8,7 +8,8 @@ import type {GraphQLFieldConfig, GraphQLField} from 'graphql'
 import type {IResolversParameter} from 'graphql-tools'
 import {
   SchemaVisitor,
-  visitSchema
+  visitSchema,
+  healSchema
 } from 'graphql-tools/dist/schemaVisitor'
 import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
@@ -16,10 +17,10 @@ import invariant from '../utils/invariant'
 
 class SchemaRemoteVisitor extends SchemaVisitor {
 
-  static visitSchema(schema: GraphQLSchema,
-                     context: {
-                       [key: string]: any
-                     } = Object.create(null),): void {
+  static visitTheSchema(schema: GraphQLSchema,
+                        context: {
+                          [key: string]: any
+                        } = Object.create(null),): GraphQLSchema {
     function visitorSelector(type: VisitableSchemaType,
                              methodName: string,): Array<SchemaRemoteVisitor> {
 
@@ -27,12 +28,16 @@ class SchemaRemoteVisitor extends SchemaVisitor {
       if (methodName != 'visitFieldDefinition')
         return visitors
 
-
-      if ((type.type instanceof GraphQLObjectType) && type.type.name.startsWith(context.prefix) && !_.isEmpty(type.type.description) && type.type.description.startsWith('{') && type.type.description.endsWith('}')) {
+      // console.log(`visitorSelector :${type.name}:`)
+      if ((type.type instanceof GraphQLObjectType)
+        && type.type.name.startsWith(context.prefix)
+        && !_.isEmpty(type.type.description)
+        && type.type.description.startsWith('{')
+        && type.type.description.endsWith('}')) {
         try {
           const info = JSON.parse(type.type.description)
           if (!_.isEmpty(info)) {
-            //console.log(`visitorSelector got it:${type.type.name},${methodName}:`, type.type.description)
+            console.log(`visitorSelector got it:${type.name},${type.type.name},${methodName}:`, type.type.description)
             visitors.push(new RemoteDirective({
               name: 'remote',
               args: {...info},
@@ -51,6 +56,10 @@ class SchemaRemoteVisitor extends SchemaVisitor {
     }
 
     visitSchema(schema, visitorSelector);
+
+    healSchema(schema)
+
+    return schema
   }
 
   constructor(config: {
@@ -71,34 +80,45 @@ class SchemaRemoteVisitor extends SchemaVisitor {
 
 class RemoteDirective extends SchemaRemoteVisitor {
   visitFieldDefinition(field: GraphQLField<any, any>) {
-    console.log('visit field:', field.name)
+    // console.log('visit field:', field.name, this.visitedType.name)
 
     invariant(!_.isEmpty(this.args), 'Must provide args')
+    const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): GraphQLObjectType => {
+      if (_.isEmpty(srcSchemas))
+        return
 
-    const schema = this.context.srcSchema || this.schema
-    const gqlObj = schema.getType(this.args.target)
+      for (let i = 0; i < srcSchemas.length; ++i) {
+        const target = srcSchemas[i]
+        if (target && target.getType(modeName)) {
+          return target.getType(modeName)
+        }
+      }
+    }
+
+    const schemas = [...this.context.srcSchema, this.schema]
+    const gqlObj = getTargetSchema(this.args.target, schemas)
     invariant(isOutputType(gqlObj), `invalid remote link ${field.name} => ${this.args.target}: not output type(maybe null)`)
 
     if (gqlObj) {
-      const fieldName = field.name
-      const linkId = fieldName + 'Id'
-
       field.type = gqlObj
+      if (field.name === 'test3') {
+        // console.log('visit field:',field)
+      }
+      //console.log('visit field:',field.resolve)
     }
   }
 }
 
 
-function mergeAllSchemas(schema:GraphQLSchema, schemaMerged:GraphQLSchema, resolvers:IResolversParameter, prefix:string):GraphQLSchema {
-
-  if (_.isEmpty(schemaMerged)) {
-    return _.isEmpty(resolvers) ? schema : mergeSchemas({schemas: [schema], resolvers})
-  } else {
-    let all = mergeSchemas({schemas: [schema,schemaMerged], resolvers})
-    SchemaRemoteVisitor.visitSchema(all,{prefix})
-    return all
-  }
-
+function mergeAllSchemas(schema: GraphQLSchema, schemaMerged: Array<GraphQLSchema>, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
+  SchemaRemoteVisitor.visitTheSchema(schema, {
+    prefix,
+    srcSchema: schemaMerged
+  })
+  let all = mergeSchemas({schemas: [schema, ...schemaMerged], resolvers})
+  // console.log('dd', schema.getQueryType().getFields()['test3'].type.name)
+  // console.log('dd', all.getQueryType().getFields()['test3'].type.name)
+  return all
 }
 
 module.exports = {
