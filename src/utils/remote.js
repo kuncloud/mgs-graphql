@@ -1,6 +1,6 @@
 // @flow
 import {HttpLink} from 'apollo-link-http'
-import {GraphQLSchema, GraphQLObjectType, assertValidSchema, GraphQLID, printSchema} from 'graphql'
+import {GraphQLSchema, GraphQLObjectType, GraphQLID, printSchema} from 'graphql'
 import type {GraphQLFieldConfig} from 'graphql'
 import {introspectSchema, makeRemoteExecutableSchema} from 'graphql-tools'
 import fetch from 'node-fetch'
@@ -14,17 +14,17 @@ import _ from 'lodash'
 const protocol: string = 'http'
 
 
-async function remoteSchemasFromURI(endPoint: String): GraphQLSchema {
-  console.log('remoteSchemasFromURI call:', endPoint)
-  const link = new HttpLink({uri: endPoint, fetch})
-  const rSchema = await introspectSchema(link)
-  const schema = makeRemoteExecutableSchema({
-    schema: rSchema,
-    link: link
-  })
-  assertValidSchema(schema)
-  return schema
-}
+// async function remoteSchemasFromURI(endPoint: String): GraphQLSchema {
+//   console.log('remoteSchemasFromURI call:', endPoint)
+//   const link = new HttpLink({uri: endPoint, fetch})
+//   const rSchema = await introspectSchema(link)
+//   const schema: GraphQLSchema  = makeRemoteExecutableSchema({
+//     schema: rSchema,
+//     link: link
+//   })
+//   // assertValidSchema(schema)
+//   return schema
+// }
 
 function remoteSchemasFromFile(endPoint: string, gqlFile: string): GraphQLSchema {
   console.log('remoteSchemasFromFile call:', endPoint, gqlFile, __dirname)
@@ -43,7 +43,7 @@ function remoteSchemasFromFile(endPoint: string, gqlFile: string): GraphQLSchema
     schema: gql,
     link: link
   })
-  assertValidSchema(schema)
+  // assertValidSchema(schema)
   return schema
 }
 
@@ -72,7 +72,7 @@ export type RemoteConfig = {
       path: string
     }
   },
-  __proto__: null
+  //__proto__: null
 }
 
 

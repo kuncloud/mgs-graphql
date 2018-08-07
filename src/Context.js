@@ -121,7 +121,7 @@ export default class Context {
     }
   }
 
-  getTargetSchema(modeName:string):GraphQLSchema{
+  getTargetSchema(modeName:string):?GraphQLSchema{
     if(!this.remoteInfo['schema'])
       return
 

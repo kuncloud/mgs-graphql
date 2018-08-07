@@ -4,7 +4,7 @@ import _ from 'lodash'
 import {
   mergeSchemas,
 } from 'graphql-tools';
-import type {GraphQLFieldConfig, GraphQLField} from 'graphql'
+import type {GraphQLFieldConfig, GraphQLField,GraphQLNamedType} from 'graphql'
 import type {IResolversParameter} from 'graphql-tools'
 import {
   SchemaVisitor,
@@ -83,7 +83,7 @@ class RemoteDirective extends SchemaRemoteVisitor {
     // console.log('visit field:', field.name, this.visitedType.name)
 
     invariant(!_.isEmpty(this.args), 'Must provide args')
-    const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): GraphQLObjectType => {
+    const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): ?GraphQLNamedType => {
       if (_.isEmpty(srcSchemas))
         return
 
