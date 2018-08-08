@@ -300,7 +300,7 @@ export default class Context {
   graphQLObjectType(name: string): GraphQLObjectType {
     const model = this.schemas[name]
     if (!model) {
-      // throw new Error('Schema ' + name + ' not define.')
+      throw new Error('Schema ' + name + ' not define.')
     } else {
       invariant(model.name === name, `${model.name}与${name}不一致`)
     }
