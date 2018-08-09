@@ -1,10 +1,10 @@
 // @flow
-import {isOutputType, GraphQLSchema, GraphQLObjectType} from 'graphql'
+import {isOutputType, GraphQLSchema, GraphQLObjectType,GraphQLList} from 'graphql'
 import _ from 'lodash'
 import {
   mergeSchemas,
 } from 'graphql-tools';
-import type {GraphQLFieldConfig, GraphQLField,GraphQLNamedType} from 'graphql'
+import type {GraphQLFieldConfig, GraphQLField} from 'graphql'
 import type {IResolversParameter} from 'graphql-tools'
 import {
   SchemaVisitor,
@@ -13,7 +13,7 @@ import {
 } from 'graphql-tools/dist/schemaVisitor'
 import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
-// import instanceOf from '../utils/instanceOf'
+
 
 class SchemaRemoteVisitor extends SchemaVisitor {
 
@@ -28,20 +28,37 @@ class SchemaRemoteVisitor extends SchemaVisitor {
       if (methodName != 'visitFieldDefinition')
         return visitors
 
-      // console.log(`visitorSelector :${type.name}:`)
-      if ((type.type instanceof GraphQLObjectType)
-        && type.type.name.startsWith(context.prefix)
-        && !_.isEmpty(type.type.description)
-        && type.type.description.startsWith('{')
-        && type.type.description.endsWith('}')) {
+
+      //console.log(`visitorSelector :${type.name}:`)
+      const isStub = (type:VisitableSchemaType) => {
+        return (type instanceof GraphQLObjectType)
+          && type.name.startsWith(context.prefix)
+          && !_.isEmpty(type.description)
+          && type.description.startsWith('{')
+          && type.description.endsWith('}')
+      }
+      let remoteType  = null
+      let visitedType = null
+      if(type.type instanceof GraphQLList){
+        const element = type.type.ofType
+        if(isStub(element)){
+          visitedType = type
+          remoteType  = element
+        }
+      }else if(isStub(type.type)){
+        visitedType = type
+        remoteType  = type.type
+      }
+
+      if (null != remoteType && null != visitedType) {
         try {
-          const info = JSON.parse(type.type.description)
+          const info = JSON.parse(remoteType.description)
           if (!_.isEmpty(info)) {
-            console.log(`visitorSelector got it:${type.name},${type.type.name},${methodName}:`, type.type.description)
+            console.log(`visitorSelector got it:${visitedType.name},${remoteType.name},${methodName}:`, remoteType.description)
             visitors.push(new RemoteDirective({
               name: 'remote',
               args: {...info},
-              visitedType: type,
+              visitedType: visitedType,
               schema,
               context
             }));
@@ -83,7 +100,7 @@ class RemoteDirective extends SchemaRemoteVisitor {
     // console.log('visit field:', field.name, this.visitedType.name)
 
     invariant(!_.isEmpty(this.args), 'Must provide args')
-    const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): ?GraphQLNamedType => {
+    const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): GraphQLObjectType => {
       if (_.isEmpty(srcSchemas))
         return
 
@@ -100,10 +117,12 @@ class RemoteDirective extends SchemaRemoteVisitor {
     invariant(isOutputType(gqlObj), `invalid remote link ${field.name} => ${this.args.target}: not output type(maybe null)`)
 
     if (gqlObj) {
-      field.type = gqlObj
-      if (field.name === 'test3') {
-        // console.log('visit field:',field)
+      if(field.type instanceof GraphQLList){
+        field.type = new GraphQLList(gqlObj)
+      }else {
+        field.type = gqlObj
       }
+
       //console.log('visit field:',field.resolve)
     }
   }
