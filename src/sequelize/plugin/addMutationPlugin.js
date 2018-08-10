@@ -3,15 +3,25 @@ import _ from 'lodash'
 import * as graphql from 'graphql'
 
 import Schema from '../../definition/Schema'
+import RemoteSchema from '../../definition/RemoteSchema'
 import StringHelper from '../../utils/StringHelper'
 
 export default function addMutation (schema:Schema<any>, options:any):void {
   const name = 'add' + StringHelper.toInitialUpperCase(schema.name)
   const addedName = 'added' + StringHelper.toInitialUpperCase(schema.name) + 'Edge'
 
+  const validateType = (value, type = String) => {
+    return (typeof value) === type || (value && (typeof value.$type) === type)
+  }
+
   const inputFields = {}
   _.forOwn(schema.config.fields, (value, key) => {
-    if ((typeof value) === 'string' || (value && (typeof value.$type) === 'string')) {
+    if (validateType(value)) {
+      if (!key.endsWith('Id')) {
+        key = key + 'Id'
+      }
+    }
+    if (validateType(value, RemoteSchema)) {
       if (!key.endsWith('Id')) {
         key = key + 'Id'
       }
@@ -40,20 +50,13 @@ export default function addMutation (schema:Schema<any>, options:any):void {
         const attrs = {}
 
         _.forOwn(schema.config.fields, (value, key) => {
-          if ((typeof value) === 'string' || (value && (typeof value.$type) === 'string')) {
+          if (validateType(value) || validateType(value, RemoteSchema)) {
             if (!key.endsWith('Id')) {
               key = key + 'Id'
             }
             if (typeof args[key] !== 'undefined') {
               attrs[StringHelper.toUnderscoredName(key)] = args[key]
               attrs[key] = args[key]
-              /*
-              if (dbModel.options.underscored) {
-                attrs[StringHelper.toUnderscoredName(key)] = args[key]
-              } else {
-                attrs[key] = args[key]
-              }
-              */
             }
           } else if (typeof args[key] !== 'undefined') {
             attrs[key] = args[key]
