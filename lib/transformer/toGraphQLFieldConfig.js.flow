@@ -87,7 +87,7 @@ const toGraphQLFieldConfig = function (name:string,
         resolve: async function (root) {
           const fieldName = name.split('.').slice(-1)[0]
           if (root[fieldName]) {
-            return relay.toGlobalId(fieldType.name.substr(0, fieldType.length - 'Id'.length), root[fieldName])
+            return relay.toGlobalId(fieldType.name.substr(0, fieldType.name.length - 'Id'.length), root[fieldName])
           } else {
             return null
           }
@@ -212,7 +212,7 @@ const toGraphQLFieldConfig = function (name:string,
             if (value['$type'] && value['hidden']) {
 
             } else {
-              if(remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema)){
+              if(remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema) && !value['$type'].name.endsWith('Id')){
                 const linkId = StringHelper.toInitialLowerCase(key) + 'Id'
                 fields[linkId] = {
                   type: graphql.GraphQLID,

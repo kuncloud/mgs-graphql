@@ -66,8 +66,15 @@ const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):
     }
 
     if (field instanceof RemoteSchema) {
-      return {
-        type: Type.GraphQLScalarTypes.globalIdInputType(field.name)
+      if(field.name.endsWith('Id')){
+        return {
+          type: Type.GraphQLScalarTypes.globalIdInputType(field.name.substr(0, field.name.length - 'Id'.length))
+        }
+
+      }else {
+        return {
+          type: Type.GraphQLScalarTypes.globalIdInputType(field.name)
+        }
       }
     }
 
