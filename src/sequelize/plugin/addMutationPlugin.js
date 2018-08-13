@@ -3,25 +3,17 @@ import _ from 'lodash'
 import * as graphql from 'graphql'
 
 import Schema from '../../definition/Schema'
-import RemoteSchema from '../../definition/RemoteSchema'
 import StringHelper from '../../utils/StringHelper'
+import RemoteSchema from '../../definition/RemoteSchema'
+import { validateType } from '../../utils/helper'
 
 export default function addMutation (schema:Schema<any>, options:any):void {
   const name = 'add' + StringHelper.toInitialUpperCase(schema.name)
   const addedName = 'added' + StringHelper.toInitialUpperCase(schema.name) + 'Edge'
 
-  const validateType = (value, type = String) => {
-    return (typeof value) === type || (value && (typeof value.$type) === type)
-  }
-
   const inputFields = {}
   _.forOwn(schema.config.fields, (value, key) => {
-    if (validateType(value)) {
-      if (!key.endsWith('Id')) {
-        key = key + 'Id'
-      }
-    }
-    if (validateType(value, RemoteSchema)) {
+    if (validateType(value) || validateType(value, RemoteSchema)) {
       if (!key.endsWith('Id')) {
         key = key + 'Id'
       }

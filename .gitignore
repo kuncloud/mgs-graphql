@@ -1,5 +1,7 @@
 .idea/
-node_modules
-**/package-lock.json
+.DS_Store
 /.npmignore
+node_modules
+lib
+package-lock.json
 yarn.lock

@@ -4,6 +4,8 @@ import * as graphql from 'graphql'
 
 import Schema from '../../definition/Schema'
 import StringHelper from '../../utils/StringHelper'
+import RemoteSchema from '../../definition/RemoteSchema'
+import { validateType } from "../../utils/helper"
 
 export default function updateMutation (schema:Schema<any>, options:any):void {
   const name = 'update' + StringHelper.toInitialUpperCase(schema.name)
@@ -17,7 +19,7 @@ export default function updateMutation (schema:Schema<any>, options:any):void {
     values: {}
   }
   _.forOwn(schema.config.fields, (value, key) => {
-    if (typeof value === 'string' || (value && typeof value.$type === 'string')) {
+    if (validateType(value) || validateType(value, RemoteSchema)) {
       if (!key.endsWith('Id')) {
         key = key + 'Id'
       }
@@ -51,20 +53,13 @@ export default function updateMutation (schema:Schema<any>, options:any):void {
         const values = {}
 
         _.forOwn(schema.config.fields, (value, key) => {
-          if (typeof value === 'string' || (value && typeof value.$type === 'string')) {
+          if (validateType(value) || validateType(value, RemoteSchema)) {
             if (!key.endsWith('Id')) {
               key = key + 'Id'
             }
             if (typeof args.values[key] !== 'undefined') {
               values[StringHelper.toUnderscoredName(key)] = args.values[key]
               values[key] = args.values[key]
-              /*
-              if (dbModel.options.underscored) {
-                values[StringHelper.toUnderscoredName(key)] = args.values[key]
-              } else {
-                values[key] = args.values[key]
-              }
-              */
             }
           } else if (typeof args.values[key] !== 'undefined') {
             values[key] = args.values[key]
