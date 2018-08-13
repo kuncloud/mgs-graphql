@@ -121,7 +121,7 @@ export default class Context {
     }
   }
 
-  getTargetSchema(modeName:string):GraphQLSchema{
+  getTargetSchema(modeName:string):?GraphQLSchema{
     if(!this.remoteInfo['schema'])
       return
 
@@ -192,7 +192,7 @@ export default class Context {
       throw new Error('Schema ' + schema.name + ' conflict with Service ' + schema.name)
     }
     if (schema.name.length >= 1 && (schema.name[0] === '_' || schema.name.endsWith('Id'))) {
-      throw new Error(`Schema "${schema.name}" must not begin with "_" or endwith "Id", which is reserved by MGS`)
+      throw new Error(`Schema "${schema.name}" must not begin with "_" or end with "Id", which is reserved by MGS`)
     }
     this.schemas[schema.name] = schema
 
@@ -300,7 +300,7 @@ export default class Context {
   graphQLObjectType(name: string): GraphQLObjectType {
     const model = this.schemas[name]
     if (!model) {
-      // throw new Error('Schema ' + name + ' not define.')
+      throw new Error('Schema ' + name + ' not define.')
     } else {
       invariant(model.name === name, `${model.name}与${name}不一致`)
     }

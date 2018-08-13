@@ -29,8 +29,10 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
       case JSON:
         return Sequelize.JSON
     }
+
     return Sequelize.JSON
   }
+
   _.forOwn(schema.config.fields, (value, key) => {
     let fType = value
     if (value && value['$type']) {
@@ -71,7 +73,15 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     } else {
       const type = dbType(fType)
       if (type) {
+        if(type === Sequelize.JSON) {
+          console.warn('please ensure the json field:', key)
+        }
+
         if (value && value['$type']) {
+          if (fType instanceof ModelRef) {
+            console.log(`schema dbmode ${schema.name} generate remote ref:${key} => ${key + 'Id'} `)
+            key = key + 'Id'
+          }
           dbDefinition[key] = {type: type}
           if (value.required != null) {
             dbDefinition[key].allowNull = !value.required

@@ -16,7 +16,7 @@ import Transformer from './transformer'
 import RemoteSchema from './definition/RemoteSchema'
 import type {SchemaOptionConfig, BuildOptionConfig, RemoteLinkConfig} from './Definition'
 import {mergeAllSchemas} from './transformer/schemaVistor'
-export type {RemoteConfig} from './utils/remote'
+import type {RemoteConfig} from './utils/remote'
 import {buildBindings} from './utils/remote'
 
 

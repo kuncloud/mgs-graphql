@@ -59,7 +59,11 @@ export default class Schema<T> {
    * Add the model link fields, and each link generate a GraphQL field but no corresponding database column.
    */
   links (links:{[id:string]: LinkedFieldConfig}):Schema<T> {
+    _.forOwn(links, (value, key) => {
+      value.isLinkField = true
+    })
     this.config.links = Object.assign(this.config.links, links)
+
     return this
   }
 
