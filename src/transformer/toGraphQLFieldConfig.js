@@ -23,7 +23,7 @@ const toGraphQLFieldConfig = function (name:string,
   resolve?: GraphQLFieldResolver<any, any>,
   description?: ?string,
 } {
-  // // console.log(`toGraphQLFieldConfig:${name}`)
+  // console.log(`toGraphQLFieldConfig:${name},${postfix}`)
   const typeName = (path:string) => {
     return path.replace(/\.\$type/g, '').replace(/\[\d*\]/g, '').split('.').map(v => StringHelper.toInitialUpperCase(v)).join('')
   }
@@ -81,8 +81,22 @@ const toGraphQLFieldConfig = function (name:string,
   }
 
   if (fieldType instanceof RemoteSchema) {
-    return {
-      type: context.remoteGraphQLObjectType(fieldType.name)
+    if(fieldType.name.endsWith('Id')){
+      return {
+        type:    graphql.GraphQLID,
+        resolve: async function (root) {
+          const fieldName = name.split('.').slice(-1)[0]
+          if (root[fieldName]) {
+            return relay.toGlobalId(fieldType.name.substr(0, fieldType.length - 'Id'.length), root[fieldName])
+          } else {
+            return null
+          }
+        }
+      }
+    }else {
+      return {
+        type: context.remoteGraphQLObjectType(fieldType.name)
+      }
     }
   }
 

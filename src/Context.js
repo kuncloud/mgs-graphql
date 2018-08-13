@@ -191,8 +191,8 @@ export default class Context {
     if (this.services[schema.name]) {
       throw new Error('Schema ' + schema.name + ' conflict with Service ' + schema.name)
     }
-    if (schema.name.length >= 1 && schema.name[0] === '_' ) {
-      throw new Error(`Schema "${schema.name}" must not begin with "_", which is reserved by MGS`)
+    if (schema.name.length >= 1 && (schema.name[0] === '_' || schema.name.endsWith('Id'))) {
+      throw new Error(`Schema "${schema.name}" must not begin with "_" or end with "Id", which is reserved by MGS`)
     }
     this.schemas[schema.name] = schema
 
