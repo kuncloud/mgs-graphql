@@ -11,6 +11,8 @@ import Context from '../Context'
 import StringHelper from '../utils/StringHelper'
 import toGraphQLInputFieldMap from './toGraphQLInputFieldMap'
 import RemoteSchema from '../definition/RemoteSchema'
+import invariant from '../utils/invariant'
+
 const toGraphQLFieldConfig = function (name:string,
                                        postfix:string,
                                        fieldType:any,
@@ -86,8 +88,9 @@ const toGraphQLFieldConfig = function (name:string,
         type:    graphql.GraphQLID,
         resolve: async function (root) {
           const fieldName = name.split('.').slice(-1)[0]
-          if (root[fieldName]) {
-            return relay.toGlobalId(fieldType.name.substr(0, fieldType.length - 'Id'.length), root[fieldName])
+          const linkId = fieldName.endsWith('Id') ? fieldName : (fieldName + 'Id')
+          if (root[linkId]) {
+            return relay.toGlobalId(fieldType.name.substr(0, fieldType.name.length - 'Id'.length), root[linkId])
           } else {
             return null
           }
@@ -212,7 +215,10 @@ const toGraphQLFieldConfig = function (name:string,
             if (value['$type'] && value['hidden']) {
 
             } else {
-              if(remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema)){
+              if(remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema) && !value['$type'].name.endsWith('Id')){
+                if(key.endsWith('Id')){
+                  throw new Error(`can't name remote field type ${value['$type'].name} as ${key}:cut off 'Id'`)
+                }
                 const linkId = StringHelper.toInitialLowerCase(key) + 'Id'
                 fields[linkId] = {
                   type: graphql.GraphQLID,
@@ -228,7 +234,7 @@ const toGraphQLFieldConfig = function (name:string,
                 context.addRemoteResolver(name,key,linkId,value['$type'].name)
               }
 
-
+              invariant(!fields[key],`duplicate key exist in schema:may be auto generated key:${name} ${fieldType.name}:${key} ${value}`)
               fields[key] = toGraphQLFieldConfig(name + postfix + '.' + key, '', value, context)
             }
           })
