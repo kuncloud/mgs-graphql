@@ -116,9 +116,11 @@ export function buildBindings(cfg: RemoteConfig): {[key:string]:any} {
         [key: string]: any;
       }, info?: GraphQLResolveInfo | string) => {
         if(args.input){
-          args.input.clientMutationId = Date.now().toString()
+          if(!args.input.clientMutationId)
+            args.input.clientMutationId = Date.now().toString()
         }else{
-          args.clientMutationId = Date.now().toString()
+          if(!args.clientMutationId)
+            args.clientMutationId = Date.now().toString()
           console.warn('Schema ${key} Mutation ${field} no input arguments ')
         }
 
