@@ -108,9 +108,27 @@ export function buildBindings(cfg: RemoteConfig): {[key:string]:any} {
       [key]: schema
     }
 
+    const b = new MyBinding(schema)
+    _.forOwn(b.mutation, (resolve, field) => {
+      b.mutation[field] = (args?: {
+        [key: string]: any;
+      }, context?: {
+        [key: string]: any;
+      }, info?: GraphQLResolveInfo | string) => {
+        if(args.input){
+          args.input.clientMutationId = Date.now().toString()
+        }else{
+          args.clientMutationId = Date.now().toString()
+          console.warn('Schema ${key} Mutation ${field} no input arguments ')
+        }
+
+        return resolve(args, context, info)
+      }
+    })
+
     binding['binding'] = {
       ...binding['binding'],
-      [key]: new MyBinding(schema)
+      [key]: b
     }
 
   })
