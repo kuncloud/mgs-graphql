@@ -1,5 +1,5 @@
 // @flow
-import {isOutputType, GraphQLSchema, GraphQLObjectType,GraphQLList} from 'graphql'
+import {isOutputType, GraphQLNonNull, GraphQLSchema, GraphQLObjectType,GraphQLList} from 'graphql'
 import _ from 'lodash'
 import {
   mergeSchemas,
@@ -28,8 +28,6 @@ class SchemaRemoteVisitor extends SchemaVisitor {
       if (methodName != 'visitFieldDefinition')
         return visitors
 
-
-      //console.log(`visitorSelector :${type.name}:`)
       const isStub = (type:VisitableSchemaType) => {
         return (type instanceof GraphQLObjectType)
           && type.name.startsWith(context.prefix)
@@ -44,6 +42,11 @@ class SchemaRemoteVisitor extends SchemaVisitor {
         if(isStub(element)){
           visitedType = type
           remoteType  = element
+        }
+      }else if(type.type instanceof GraphQLNonNull){
+        if (isStub(type.type.ofType)) {
+          visitedType = type;
+          remoteType = type.type.ofType;
         }
       }else if(isStub(type.type)){
         visitedType = type
@@ -97,8 +100,6 @@ class SchemaRemoteVisitor extends SchemaVisitor {
 
 class RemoteDirective extends SchemaRemoteVisitor {
   visitFieldDefinition(field: GraphQLField<any, any>) {
-    // console.log('visit field:', field.name, this.visitedType.name)
-
     invariant(!_.isEmpty(this.args), 'Must provide args')
     const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): GraphQLObjectType => {
       if (_.isEmpty(srcSchemas))
@@ -123,7 +124,6 @@ class RemoteDirective extends SchemaRemoteVisitor {
         field.type = gqlObj
       }
 
-      //console.log('visit field:',field.resolve)
     }
   }
 }
@@ -134,10 +134,7 @@ function mergeAllSchemas(schema: GraphQLSchema, schemaMerged: Array<GraphQLSchem
     prefix,
     srcSchema: schemaMerged
   })
-  let all = mergeSchemas({schemas: [schema, ...schemaMerged], resolvers})
-  // console.log('dd', schema.getQueryType().getFields()['test3'].type.name)
-  // console.log('dd', all.getQueryType().getFields()['test3'].type.name)
-  return all
+  return mergeSchemas({schemas: [schema, ...schemaMerged], resolvers})
 }
 
 module.exports = {
