@@ -256,14 +256,14 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
                   required: true
                 })
               }
-              if (!condition.$and) {
-                condition.$and = []
+              if (!condition[Sequelize.Op.eq]) {
+                condition[Sequelize.Op.eq] = []
               }
               Object.keys(condition[key]).forEach(f => {
                 if (dbModel.options.underscored) {
-                  condition.$and.push(Sequelize.where(Sequelize.col(key + '.' + StringHelper.toUnderscoredName(f)), {$eq: condition[key][f]}))
+                  condition[Sequelize.Op.eq].push(Sequelize.where(Sequelize.col(key + '.' + StringHelper.toUnderscoredName(f)), {[Sequelize.Op.eq]: condition[key][f]}))
                 } else {
-                  condition.$and.push(Sequelize.where(Sequelize.col(key + '.' + f), {$eq: condition[key][f]}))
+                  condition[Sequelize.Op.eq].push(Sequelize.where(Sequelize.col(key + '.' + f), {[Sequelize.Op.eq]: condition[key][f]}))
                 }
               })
               delete condition[key]
@@ -305,15 +305,15 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
                 if (dbModel.options.underscored) {
                   colFieldName = fieldName + StringHelper.toUnderscoredName(field.substr(field.indexOf('.')))
                 }
-                keywordsCondition.push(Sequelize.where(Sequelize.col(colFieldName), {$like: '%' + value + '%'}))
+                keywordsCondition.push(Sequelize.where(Sequelize.col(colFieldName), {[Sequelize.Op.like]: '%' + value + '%'}))
               } else {
-                keywordsCondition.push({[field]: {$like: '%' + value + '%'}})
+                keywordsCondition.push({[field]: {[Sequelize.Op.like]: '%' + value + '%'}})
               }
             } else {
-              keywordsCondition.push({[field]: {$like: '%' + value + '%'}})
+              keywordsCondition.push({[field]: {[Sequelize.Op.like]: '%' + value + '%'}})
             }
           }
-          condition.$or = keywordsCondition
+          condition[Sequelize.Op.or] = keywordsCondition
         }
         return resolveConnection(dbModel, {...args, condition, include})
       }

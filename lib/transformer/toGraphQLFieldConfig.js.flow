@@ -62,7 +62,7 @@ const toGraphQLFieldConfig = function (name:string,
             root[fieldName] && root[fieldName].length > 0 &&
             (typeof root[fieldName][0] === 'number' || typeof root[fieldName][0] === 'string')
           ) {
-            const records = await sgContext.models[fieldType[0]].findAll({where: {id: {$in: root[fieldName]}}})
+            const records = await sgContext.models[fieldType[0]].findAll({where: {id: {[Sequelize.Op.in]: root[fieldName]}}})
             const result = []
             for (let cId of root[fieldName]) {
               for (let record of records) {
