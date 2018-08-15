@@ -78,9 +78,11 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
         }
 
         if (value && value['$type']) {
-          if (fType instanceof ModelRef && !fType.name.endsWith('Id')) {
-            console.log(`schema dbmode ${schema.name} generate remote ref:${key} => ${key + 'Id'} `)
-            key = key + 'Id'
+          if (fType instanceof ModelRef) {
+            console.log(`schema db mode ${schema.name} generate remote ref:${key} => ${key + 'Id'} `)
+            if(!fType.name.endsWith('Id') || !key.endsWith('Id')){
+              key = key + 'Id'
+            }
           }
           dbDefinition[key] = {type: type}
           if (value.required != null) {
