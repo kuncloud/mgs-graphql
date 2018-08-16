@@ -240,7 +240,7 @@ const toGraphQLFieldConfig = function (name:string,
                 !value['$type'].endsWith('Id') &&
                 !value['$type'].endsWith('Edge') &&
                 !value['$type'].endsWith('Connection')){
-                console.log(`generate linkId:${key}`)
+                //console.log(`generate linkId:${key}`)
                 const linkId = key + 'Id'
                 fields[linkId] = {
                   type: graphql.GraphQLID,
