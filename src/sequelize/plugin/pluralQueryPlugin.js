@@ -2,11 +2,13 @@
 import * as _ from 'lodash'
 import * as graphql from 'graphql'
 import Sequelize from 'sequelize'
-
 import Schema from '../../definition/Schema'
 import Type from '../../type'
 import StringHelper from '../../utils/StringHelper'
 import resolveConnection from '../resolveConnection'
+
+
+
 
 const SortEnumType = new graphql.GraphQLEnumType({
   name: 'SortOrder',
@@ -256,14 +258,14 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
                   required: true
                 })
               }
-              if (!condition[Sequelize.Op.eq]) {
-                condition[Sequelize.Op.eq] = []
+              if (!condition[Sequelize.Op.and]) {
+                condition[Sequelize.Op.and] = []
               }
               Object.keys(condition[key]).forEach(f => {
                 if (dbModel.options.underscored) {
-                  condition[Sequelize.Op.eq].push(Sequelize.where(Sequelize.col(key + '.' + StringHelper.toUnderscoredName(f)), {[Sequelize.Op.eq]: condition[key][f]}))
+                  condition[Sequelize.Op.and].push(Sequelize.where(Sequelize.col(key + '.' + StringHelper.toUnderscoredName(f)), {[Sequelize.Op.and]: condition[key][f]}))
                 } else {
-                  condition[Sequelize.Op.eq].push(Sequelize.where(Sequelize.col(key + '.' + f), {[Sequelize.Op.eq]: condition[key][f]}))
+                  condition[Sequelize.Op.and].push(Sequelize.where(Sequelize.col(key + '.' + f), {[Sequelize.Op.and]: condition[key][f]}))
                 }
               })
               delete condition[key]

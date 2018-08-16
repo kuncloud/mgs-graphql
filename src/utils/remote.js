@@ -1,7 +1,7 @@
 // @flow
 import {HttpLink} from 'apollo-link-http'
-import {GraphQLSchema, GraphQLObjectType, GraphQLID, printSchema} from 'graphql'
-import type {GraphQLFieldConfig} from 'graphql'
+import {GraphQLSchema,  GraphQLID, printSchema} from 'graphql'
+import type {GraphQLFieldConfig,GraphQLResolveInfo} from 'graphql'
 import {introspectSchema, makeRemoteExecutableSchema} from 'graphql-tools'
 import fetch from 'node-fetch'
 import path from 'path'
@@ -115,14 +115,17 @@ export function buildBindings(cfg: RemoteConfig): {[key:string]:any} {
       }, context?: {
         [key: string]: any;
       }, info?: GraphQLResolveInfo | string) => {
-        if(args.input){
-          if(!args.input.clientMutationId)
-            args.input.clientMutationId = Date.now().toString()
-        }else{
-          if(!args.clientMutationId)
-            args.clientMutationId = Date.now().toString()
-          console.warn('Schema ${key} Mutation ${field} no input arguments ')
+        if(args){
+          if(args.input){
+            if(!args.input.clientMutationId)
+              args.input.clientMutationId = Date.now().toString()
+          }else{
+            if(!args.clientMutationId)
+              args.clientMutationId = Date.now().toString()
+            console.warn('Schema ${key} Mutation ${field} no input arguments ')
+          }
         }
+
 
         return resolve(args, context, info)
       }

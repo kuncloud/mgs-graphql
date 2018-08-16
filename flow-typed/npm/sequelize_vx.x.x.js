@@ -30,6 +30,7 @@ declare class Sequelize {
   static col:any;
   static fn:any;
   static where:any;
+  static Op:any;
 
   transaction:any;
 
