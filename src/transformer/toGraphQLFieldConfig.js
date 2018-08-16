@@ -234,6 +234,26 @@ const toGraphQLFieldConfig = function (name:string,
                 context.addRemoteResolver(name,key,linkId,value['$type'].name)
               }
 
+              if(remoteWithId &&
+                (typeof value['$type'] === 'string') &&
+                !value.isLinkField &&
+                !value['$type'].endsWith('Id') &&
+                !value['$type'].endsWith('Edge') &&
+                !value['$type'].endsWith('Connection')){
+                console.log(`generate linkId:${key}`)
+                const linkId = key + 'Id'
+                fields[linkId] = {
+                  type: graphql.GraphQLID,
+                  resolve: async function (root) {
+                    if (root[linkId]) {
+                      return relay.toGlobalId(value['$type'] , root[linkId])
+                    } else {
+                      return root[linkId]
+                    }
+                  }
+                }
+              }
+
               invariant(!fields[key],`duplicate key exist in schema:may be auto generated key:${name} ${fieldType.name}:${key} ${value}`)
               fields[key] = toGraphQLFieldConfig(name + postfix + '.' + key, '', value, context)
             }
