@@ -55,7 +55,7 @@
     "express": "^4.16.3",
     "express-graphql": "^0.6.12",
     "flow-bin": "^0.51.1",
-    "graphql": "^0.10.5",
+    "graphql": "^0.13.2",
     "graphql-relay": "^0.5.5",
     "jest": "^20.0.4",
     "pre-commit": "^1.2.2",
