@@ -123,13 +123,15 @@ class RemoteDirective extends SchemaRemoteVisitor {
       }else {
         field.type = gqlObj
       }
-
     }
   }
 }
 
 
 function mergeAllSchemas(schema: GraphQLSchema, schemaMerged: Array<GraphQLSchema>, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
+  if(_.isEmpty(schemaMerged) && _.isEmpty(resolvers))
+    return schema
+
   SchemaRemoteVisitor.visitTheSchema(schema, {
     prefix,
     srcSchema: schemaMerged
