@@ -6,9 +6,9 @@ import Schema from '../../definition/Schema'
 import Type from '../../type'
 import StringHelper from '../../utils/StringHelper'
 import resolveConnection from '../resolveConnection'
+import RemoteSchema from '../../definition/RemoteSchema'
 
-
-
+const Op = Sequelize.Op
 
 const SortEnumType = new graphql.GraphQLEnumType({
   name: 'SortOrder',
@@ -124,6 +124,11 @@ const StringConditionType = new graphql.GraphQLInputObjectType({
   }
 })
 
+
+const _cvtKey = (key:string):Symbol|string =>{
+  return (Op[key]) ? Op[key] : key
+}
+
 export default function pluralQuery (schema:Schema<any>, options:any):void {
   const name = StringHelper.toInitialLowerCase(schema.name) + 's'
 
@@ -131,7 +136,10 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
   const conditionFieldKeys = []
   // 过滤不可搜索的field
   _.forOwn(schema.config.fields, (value, key) => {
-    if (typeof value === 'string' || (value && typeof value.$type === 'string')) {
+    if(!value)
+        return
+
+    if (typeof value === 'string' || (typeof value.$type === 'string') || (value.$type instanceof RemoteSchema)) {
       if (!key.endsWith('Id')) {
         key = key + 'Id'
       }
@@ -170,6 +178,7 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
     config = options
   }
 
+
   // 生产
   schema.queries({
     [name]: {
@@ -194,7 +203,11 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
             }
             return type
           }),
+          // _suportJsonCondition:true,
           description: 'Query Condition'
+        } ,
+        jsonCondition:{
+          $type: Type.GraphQLScalarTypes.Json
         },
         sort: {
           $type: [{field: String, order: SortEnumType}],
@@ -217,7 +230,7 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
                                sgContext) {
         const dbModel = sgContext.models[schema.name]
 
-        let {sort = [{field: 'id', order: 'ASC'}], condition = {}} = (args != null ? args : {})
+        let {sort = [{field: 'id', order: 'ASC'}], condition = {}, jsonCondition} = (args != null ? args : {})
 
         if (dbModel.options.underscored) {
           for (let item of sort) {
@@ -228,10 +241,45 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
         conditionFieldKeys.forEach(fieldKey => {
           if (condition[fieldKey]) {
             condition[fieldKey] = _.mapKeys(condition[fieldKey], function (value, key) {
-              return '$' + key
+              return _cvtKey(key)
             })
           }
         })
+
+        const replaceOp = (obj) => {
+          if(typeof obj === 'object'){
+            const res = {}
+            _.forOwn(obj,(value,key)=>{
+              if(!searchFields[key] && !Op[key] && key !== 'id')
+                throw new Error(`Invalid field:${key} in schema ${schema.name},please check it`)
+              key = _cvtKey(key)
+              if (_.isArray(value)){
+                res[key] = _.map(value,(v)=>{return replaceOp(v)})
+              }else if(typeof value === 'object') {
+                res[key] = replaceOp(value)
+              }else{
+                res[key] = value
+              }
+            })
+            return res
+          }else{
+            return obj
+          }
+        }
+
+        try {
+          const cond = replaceOp(jsonCondition)
+          if(cond) {
+            //console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
+            if (!condition[Op.and]) {
+              condition[Op.and] = []
+            }
+            condition[Op.and].push(cond)
+          }
+        }catch(err){
+          throw err
+          console.log(err.message)
+        }
 
         const include = []
         const includeFields = {}
@@ -251,21 +299,25 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
             if (typeof condition[key] !== 'undefined') {
               if (!includeFields[key]) {
                 const type = associationType(schema, key)
-                includeFields[key] = true
-                include.push({
-                  model: sgContext.models[type],
-                  as: key,
-                  required: true
-                })
+                if(type) {
+                  includeFields[key] = true
+                  include.push({
+                    model: sgContext.models[type],
+                    as: key,
+                    required: true
+                  })
+                }else{
+                  throw new Error(`unknown associated model:${key} in ${schema.name}`)
+                }
               }
-              if (!condition[Sequelize.Op.and]) {
-                condition[Sequelize.Op.and] = []
+              if (!condition[Op.and]) {
+                condition[Op.and] = []
               }
               Object.keys(condition[key]).forEach(f => {
                 if (dbModel.options.underscored) {
-                  condition[Sequelize.Op.and].push(Sequelize.where(Sequelize.col(key + '.' + StringHelper.toUnderscoredName(f)), {[Sequelize.Op.and]: condition[key][f]}))
+                  condition[Op.and].push(Sequelize.where(Sequelize.col(key + '.' + StringHelper.toUnderscoredName(f)), {[Op.and]: condition[key][f]}))
                 } else {
-                  condition[Sequelize.Op.and].push(Sequelize.where(Sequelize.col(key + '.' + f), {[Sequelize.Op.and]: condition[key][f]}))
+                  condition[Op.and].push(Sequelize.where(Sequelize.col(key + '.' + f), {[Op.and]: condition[key][f]}))
                 }
               })
               delete condition[key]
@@ -307,16 +359,17 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
                 if (dbModel.options.underscored) {
                   colFieldName = fieldName + StringHelper.toUnderscoredName(field.substr(field.indexOf('.')))
                 }
-                keywordsCondition.push(Sequelize.where(Sequelize.col(colFieldName), {[Sequelize.Op.like]: '%' + value + '%'}))
+                keywordsCondition.push(Sequelize.where(Sequelize.col(colFieldName), {[Op.like]: '%' + value + '%'}))
               } else {
-                keywordsCondition.push({[field]: {[Sequelize.Op.like]: '%' + value + '%'}})
+                keywordsCondition.push({[field]: {[Op.like]: '%' + value + '%'}})
               }
             } else {
-              keywordsCondition.push({[field]: {[Sequelize.Op.like]: '%' + value + '%'}})
+              keywordsCondition.push({[field]: {[Op.like]: '%' + value + '%'}})
             }
           }
-          condition[Sequelize.Op.or] = keywordsCondition
+          condition[Op.or] = keywordsCondition
         }
+
         return resolveConnection(dbModel, {...args, condition, include})
       }
     }

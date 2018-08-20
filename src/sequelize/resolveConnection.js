@@ -1,6 +1,6 @@
 // @flow
 import Sequelize from 'sequelize'
-
+const Op = Sequelize.Op
 export default async function resolveConnection (dbModel:Sequelize.Model, args:{
   after?: string,
   first?: number,
@@ -27,12 +27,10 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
     order: 'ASC'
   }]} = args
   let reverse = false
-
   const count = await dbModel.count({
     include: include,
     where: condition
   })
-
   if (last || before) {
     reverse = true
     first = last || 100
@@ -54,6 +52,7 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
     limit: first,
     offset: offset
   })
+  console.log('fr:',result)
 
   let index = 0
   let startCursor = offset + 1

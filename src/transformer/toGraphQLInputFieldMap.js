@@ -156,6 +156,14 @@ const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):
         } else {
           fieldMap[key] = inputField
         }
+
+        // if(value['_suportJsonCondition']===true){
+        //   fieldMap[key].type = new graphql.GraphQLUnionType({
+        //     name: name+'Json',
+        //     types: [{name:name+'Json1',type: graphql.GraphQLString}, {name:name+'Json2',type: graphql.GraphQLBoolean}],
+        //     description: 'test'
+        //   })
+        // }
       }
     }
   })
