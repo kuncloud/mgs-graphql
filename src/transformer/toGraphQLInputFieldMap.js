@@ -8,7 +8,6 @@ import type {GraphQLInputFieldConfig, GraphQLInputFieldConfigMap} from 'graphql'
 
 import Type from '../type'
 import StringHelper from '../utils/StringHelper'
-import invariant from '../utils/invariant'
 import RemoteSchema from '../definition/RemoteSchema'
 
 const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):GraphQLInputFieldConfigMap {
@@ -27,7 +26,7 @@ const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):
     }
 
     if (graphql.isCompositeType(field)) {
-      //invariant(false, 'unsupported type:isCompositeType' + typeof field)
+      // invariant(false, 'unsupported type:isCompositeType' + typeof field)
       return
     }
 
@@ -66,12 +65,11 @@ const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):
     }
 
     if (field instanceof RemoteSchema) {
-      if(field.name.endsWith('Id')){
+      if (field.name.endsWith('Id')) {
         return {
           type: Type.GraphQLScalarTypes.globalIdInputType(field.name.substr(0, field.name.length - 'Id'.length))
         }
-
-      }else {
+      } else {
         return {
           type: Type.GraphQLScalarTypes.globalIdInputType(field.name)
         }

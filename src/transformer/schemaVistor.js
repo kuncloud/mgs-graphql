@@ -1,10 +1,10 @@
 // @flow
-import {isOutputType, GraphQLNonNull, GraphQLSchema, GraphQLObjectType,GraphQLList} from 'graphql'
+import {isOutputType, GraphQLNonNull, GraphQLSchema, GraphQLObjectType, GraphQLList} from 'graphql'
 import _ from 'lodash'
 import {
-  mergeSchemas,
-} from 'graphql-tools';
-import type {GraphQLFieldConfig, GraphQLField,GraphQLNamedType} from 'graphql'
+  mergeSchemas
+} from 'graphql-tools'
+import type {GraphQLField, GraphQLNamedType} from 'graphql'
 import type {IResolversParameter} from 'graphql-tools'
 import {
   SchemaVisitor,
@@ -14,46 +14,42 @@ import {
 import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
 
-
 class SchemaRemoteVisitor extends SchemaVisitor {
-
-  static visitTheSchema(schema: GraphQLSchema,
+  static visitTheSchema (schema: GraphQLSchema,
                         context: {
                           [key: string]: any
-                        } = Object.create(null),): GraphQLSchema {
-    function visitorSelector(type: VisitableSchemaType,
-                             methodName: string,): Array<SchemaRemoteVisitor> {
-
+                        } = Object.create(null)): GraphQLSchema {
+    function visitorSelector (type: VisitableSchemaType,
+                             methodName: string): Array<SchemaRemoteVisitor> {
       const visitors = []
-      if (methodName != 'visitFieldDefinition')
-        return visitors
+      if (methodName !== 'visitFieldDefinition') { return visitors }
 
       const isStub = (type:VisitableSchemaType) => {
-        return (type instanceof GraphQLObjectType)
-          && type.name.startsWith(context.prefix)
-          && !_.isEmpty(type.description)
-          && type.description.startsWith('{')
-          && type.description.endsWith('}')
+        return (type instanceof GraphQLObjectType) &&
+          type.name.startsWith(context.prefix) &&
+          !_.isEmpty(type.description) &&
+          type.description.startsWith('{') &&
+          type.description.endsWith('}')
       }
-      let remoteType  = null
+      let remoteType = null
       let visitedType = null
-      if(type.type instanceof GraphQLList){
+      if (type.type instanceof GraphQLList) {
         const element = type.type.ofType
-        if(isStub(element)){
+        if (isStub(element)) {
           visitedType = type
-          remoteType  = element
+          remoteType = element
         }
-      }else if(type.type instanceof GraphQLNonNull){
+      } else if (type.type instanceof GraphQLNonNull) {
         if (isStub(type.type.ofType)) {
-          visitedType = type;
-          remoteType = type.type.ofType;
+          visitedType = type
+          remoteType = type.type.ofType
         }
-      }else if(isStub(type.type)){
+      } else if (isStub(type.type)) {
         visitedType = type
-        remoteType  = type.type
+        remoteType = type.type
       }
 
-      if (null != remoteType && null != visitedType) {
+      if (remoteType != null && visitedType != null) {
         try {
           const info = JSON.parse(remoteType.description)
           if (!_.isEmpty(info)) {
@@ -64,7 +60,7 @@ class SchemaRemoteVisitor extends SchemaVisitor {
               visitedType: visitedType,
               schema,
               context
-            }));
+            }))
             return visitors
           }
         } catch (err) {
@@ -75,35 +71,34 @@ class SchemaRemoteVisitor extends SchemaVisitor {
       return visitors
     }
 
-    visitSchema(schema, visitorSelector);
+    visitSchema(schema, visitorSelector)
 
     healSchema(schema)
 
     return schema
   }
 
-  constructor(config: {
+  constructor (config: {
     name: string,
     args: {[name: string]: any},
     visitedType: VisitableSchemaType,
     schema: GraphQLSchema,
     context: {[key: string]: any}
   }) {
-    super();
-    this.name = config.name;
-    this.args = config.args;
-    this.visitedType = config.visitedType;
-    this.schema = config.schema;
-    this.context = config.context;
+    super()
+    this.name = config.name
+    this.args = config.args
+    this.visitedType = config.visitedType
+    this.schema = config.schema
+    this.context = config.context
   }
 }
 
 class RemoteDirective extends SchemaRemoteVisitor {
-  visitFieldDefinition(field: GraphQLField<any, any>) {
+  visitFieldDefinition (field: GraphQLField<any, any>) {
     invariant(!_.isEmpty(this.args), 'Must provide args')
     const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): ?GraphQLNamedType => {
-      if (_.isEmpty(srcSchemas))
-        return
+      if (_.isEmpty(srcSchemas)) { return }
 
       for (let i = 0; i < srcSchemas.length; ++i) {
         const target = srcSchemas[i]
@@ -118,19 +113,17 @@ class RemoteDirective extends SchemaRemoteVisitor {
     invariant(isOutputType(gqlObj), `invalid remote link ${field.name} => ${this.args.target}: not output type(maybe null)`)
 
     if (gqlObj) {
-      if(field.type instanceof GraphQLList){
+      if (field.type instanceof GraphQLList) {
         field.type = new GraphQLList(gqlObj)
-      }else {
+      } else {
         field.type = gqlObj
       }
     }
   }
 }
 
-
-function mergeAllSchemas(schema: GraphQLSchema, schemaMerged: Array<GraphQLSchema>, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
-  if(_.isEmpty(schemaMerged) && _.isEmpty(resolvers))
-    return schema
+function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: Array<GraphQLSchema>, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
+  if (_.isEmpty(schemaMerged) && _.isEmpty(resolvers)) { return schema }
 
   SchemaRemoteVisitor.visitTheSchema(schema, {
     prefix,

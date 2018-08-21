@@ -1,6 +1,6 @@
 // @flow
 import _ from 'lodash'
-import type { LinkedFieldConfig, QueryConfig, MutationConfig,RemoteLinkConfig,
+import type { LinkedFieldConfig, QueryConfig, MutationConfig, RemoteLinkConfig,
   FieldType, SchemaOptionConfig, HasOneConfig, BelongsToConfig, HasManyConfig,
   BelongsToManyConfig, AssociationConfig} from '../Definition'
 
@@ -19,7 +19,6 @@ export default class Schema<T> {
   }
 
   remoteLinkConfig:RemoteLinkConfig
-
 
   constructor (name:string, options:SchemaOptionConfig = {}) {
     this.name = name

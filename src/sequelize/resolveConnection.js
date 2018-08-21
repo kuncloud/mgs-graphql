@@ -1,6 +1,5 @@
 // @flow
 import Sequelize from 'sequelize'
-const Op = Sequelize.Op
 export default async function resolveConnection (dbModel:Sequelize.Model, args:{
   after?: string,
   first?: number,

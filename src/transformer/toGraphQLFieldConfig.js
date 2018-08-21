@@ -1,6 +1,6 @@
 // @flow
 import _ from 'lodash'
-
+import Sequelize from 'sequelize'
 import * as graphql from 'graphql'
 import * as relay from 'graphql-relay'
 
@@ -53,10 +53,10 @@ const toGraphQLFieldConfig = function (name:string,
     const elementType = toGraphQLFieldConfig(name, postfix, fieldType[0], context).type
     const listType = new graphql.GraphQLList(elementType)
     return {
-      type:    listType,
+      type: listType,
       resolve: context.wrapFieldResolve({
-        name:  name.split('.').slice(-1)[0],
-        path:  name,
+        name: name.split('.').slice(-1)[0],
+        path: name,
         $type: listType,
         resolve: async function (root, args, context, info, sgContext) {
           const fieldName = name.split('.').slice(-1)[0]
@@ -83,9 +83,9 @@ const toGraphQLFieldConfig = function (name:string,
   }
 
   if (fieldType instanceof RemoteSchema) {
-    if(fieldType.name.endsWith('Id')){
+    if (fieldType.name.endsWith('Id')) {
       return {
-        type:    graphql.GraphQLID,
+        type: graphql.GraphQLID,
         resolve: async function (root) {
           const fieldName = name.split('.').slice(-1)[0]
           const linkId = fieldName.endsWith('Id') ? fieldName : (fieldName + 'Id')
@@ -96,7 +96,7 @@ const toGraphQLFieldConfig = function (name:string,
           }
         }
       }
-    }else {
+    } else {
       return {
         type: context.remoteGraphQLObjectType(fieldType.name)
       }
@@ -106,7 +106,7 @@ const toGraphQLFieldConfig = function (name:string,
   if (typeof fieldType === 'string') {
     if (fieldType.endsWith('Id')) {
       return {
-        type:    graphql.GraphQLID,
+        type: graphql.GraphQLID,
         resolve: async function (root) {
           const fieldName = name.split('.').slice(-1)[0]
           if (root[fieldName]) {
@@ -143,10 +143,10 @@ const toGraphQLFieldConfig = function (name:string,
       }
     } else {
       return {
-        type:    context.graphQLObjectType(fieldType),
+        type: context.graphQLObjectType(fieldType),
         resolve: context.wrapFieldResolve({
-          name:  name.split('.').slice(-1)[0],
-          path:  name,
+          name: name.split('.').slice(-1)[0],
+          path: name,
           $type: context.graphQLObjectType(fieldType),
           resolve: async function (root, args, context, info, sgContext) {
             const fieldName = name.split('.').slice(-1)[0]
@@ -215,8 +215,8 @@ const toGraphQLFieldConfig = function (name:string,
             if (value['$type'] && value['hidden']) {
 
             } else {
-              if(remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema) && !value['$type'].name.endsWith('Id')){
-                if(key.endsWith('Id')){
+              if (remoteWithId && !value.isLinkField && (value['$type'] instanceof RemoteSchema) && !value['$type'].name.endsWith('Id')) {
+                if (key.endsWith('Id')) {
                   throw new Error(`can't name remote field type ${value['$type'].name} as ${key}:cut off 'Id'`)
                 }
                 const linkId = StringHelper.toInitialLowerCase(key) + 'Id'
@@ -224,29 +224,29 @@ const toGraphQLFieldConfig = function (name:string,
                   type: graphql.GraphQLID,
                   resolve: async function (root) {
                     if (root[linkId]) {
-                      return relay.toGlobalId(value['$type'].name , root[linkId])
+                      return relay.toGlobalId(value['$type'].name, root[linkId])
                     } else {
                       return root[linkId]
                     }
                   }
                 }
 
-                context.addRemoteResolver(name,key,linkId,value['$type'].name)
+                context.addRemoteResolver(name, key, linkId, value['$type'].name)
               }
 
-              if(remoteWithId &&
+              if (remoteWithId &&
                 (typeof value['$type'] === 'string') &&
                 !value.isLinkField &&
                 !value['$type'].endsWith('Id') &&
                 !value['$type'].endsWith('Edge') &&
-                !value['$type'].endsWith('Connection')){
-                //console.log(`generate linkId:${key}`)
+                !value['$type'].endsWith('Connection')) {
+                // console.log(`generate linkId:${key}`)
                 const linkId = key + 'Id'
                 fields[linkId] = {
                   type: graphql.GraphQLID,
                   resolve: async function (root) {
                     if (root[linkId]) {
-                      return relay.toGlobalId(value['$type'] , root[linkId])
+                      return relay.toGlobalId(value['$type'], root[linkId])
                     } else {
                       return root[linkId]
                     }
@@ -254,7 +254,7 @@ const toGraphQLFieldConfig = function (name:string,
                 }
               }
 
-              invariant(!fields[key],`duplicate key exist in schema:may be auto generated key:${name} ${fieldType.name}:${key} ${value}`)
+              invariant(!fields[key], `duplicate key exist in schema:may be auto generated key:${name} ${fieldType.name}:${key} ${value}`)
               fields[key] = toGraphQLFieldConfig(name + postfix + '.' + key, '', value, context)
             }
           })

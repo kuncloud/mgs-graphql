@@ -40,7 +40,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     }
     if (typeof fType === 'string') {
       let foreignField = key
-      let foreignFieldId = key + 'Id';
+      let foreignFieldId = key + 'Id'
       let onDelete = 'RESTRICT'
       if (value && value['$type'] && value.column) {
         if (value.column.onDelete) {
@@ -73,14 +73,14 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     } else {
       const type = dbType(fType)
       if (type) {
-        if(type === Sequelize.JSON) {
+        if (type === Sequelize.JSON) {
           console.warn('please ensure the json field:', key)
         }
 
         if (value && value['$type']) {
           if (fType instanceof ModelRef) {
             console.log(`schema db mode ${schema.name} generate remote ref:${key} => ${key + 'Id'} `)
-            if(!fType.name.endsWith('Id') || !key.endsWith('Id')){
+            if (!fType.name.endsWith('Id') || !key.endsWith('Id')) {
               key = key + 'Id'
             }
           }
@@ -111,12 +111,12 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
   })
 
   // schema定义中的indexes的field驼峰名称改为下划线来新建table
-  if(schema.config.options['table'] && schema.config.options['table']['indexes']){
-    schema.config.options['table']['indexes'].forEach((item)=>{
-      let tempFields = [];
-      if (!!item['unique'] && !!item['fields']){
-        item['fields'].forEach((field)=>{
-          tempFields.push(field.replace(/([A-Z])/g,"_$1").toLowerCase())
+  if (schema.config.options['table'] && schema.config.options['table']['indexes']) {
+    schema.config.options['table']['indexes'].forEach((item) => {
+      let tempFields = []
+      if (!!item['unique'] && !!item['fields']) {
+        item['fields'].forEach((field) => {
+          tempFields.push(field.replace(/([A-Z])/g, '_$1').toLowerCase())
         })
       }
       item['fields'] = tempFields

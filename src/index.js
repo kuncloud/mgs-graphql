@@ -2,10 +2,10 @@
 
 import Sequelize from 'sequelize'
 import _ from 'lodash'
-import {GraphQLSchema,GraphQLObjectType,GraphQLNonNull,GraphQLID,printSchema} from 'graphql'
+import {GraphQLSchema, GraphQLObjectType, GraphQLNonNull} from 'graphql'
 import type {GraphQLFieldConfig} from 'graphql'
-import * as relay from 'graphql-relay'
-import invariant from './utils/invariant'
+// import * as relay from 'graphql-relay'
+// import invariant from './utils/invariant'
 import Schema from './definition/Schema'
 import Service from './definition/Service'
 import Type from './type'
@@ -14,11 +14,9 @@ import StringHelper from './utils/StringHelper'
 import Connection from './utils/Connection'
 import Transformer from './transformer'
 import RemoteSchema from './definition/RemoteSchema'
-import type {SchemaOptionConfig, BuildOptionConfig, RemoteLinkConfig} from './Definition'
+import type {SchemaOptionConfig, BuildOptionConfig} from './Definition'
 import {mergeAllSchemas} from './transformer/schemaVistor'
 import type {RemoteConfig} from './utils/remote'
-import {buildBindings} from './utils/remote'
-
 
 const SimpleGraphQL = {
 
@@ -43,7 +41,7 @@ const SimpleGraphQL = {
 
   Service: Service,
 
-  //RemoteLinkConfig: RemoteLinkConfig,
+  // RemoteLinkConfig: RemoteLinkConfig,
 
   /**
    * Define a Schema
@@ -67,8 +65,8 @@ const SimpleGraphQL = {
     options?:BuildOptionConfig,
     remoteCfg?:RemoteConfig
   }): {graphQLSchema:GraphQLSchema, sgContext:any} => {
-    const {sequelize, schemas = [], services = [], options = {},remoteCfg={}} = args
-    const context = new Context(sequelize, options,remoteCfg)
+    const {sequelize, schemas = [], services = [], options = {}, remoteCfg = {}} = args
+    const context = new Context(sequelize, options, remoteCfg)
 
     // 添加Schema
     schemas.forEach(schema => {
@@ -209,7 +207,7 @@ const SimpleGraphQL = {
       fields: () => {
         const fields: {[fieldName: string]: GraphQLFieldConfig<any, any>} = {}
         _.forOwn(context.mutations, (value, key) => {
-          const inputFields  = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
+          const inputFields = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
           const outputFields = {}
           // const payloadFields = _.get(options, 'mutation.payloadFields', [])
           // for (const field of payloadFields) {
@@ -247,13 +245,13 @@ const SimpleGraphQL = {
     })
 
     let schema = new GraphQLSchema({
-      query:    rootQuery,
+      query: rootQuery,
       mutation: rootMutation
     })
 
     const schemaMerged = []
-    if(!_.isEmpty(context.remoteInfo) && !_.isEmpty(context.remoteInfo['schema'])){
-      _.forOwn(context.remoteInfo['schema'],(value,key) => {
+    if (!_.isEmpty(context.remoteInfo) && !_.isEmpty(context.remoteInfo['schema'])) {
+      _.forOwn(context.remoteInfo['schema'], (value, key) => {
         schemaMerged.push(value)
       })
     }
@@ -262,9 +260,8 @@ const SimpleGraphQL = {
       schema,
       schemaMerged,
       context.resolvers,
-      context.remote_prefix
+      context.remotePrefix
     )
-
 
     return {
       sgContext: context.getSGContext(),
@@ -272,6 +269,5 @@ const SimpleGraphQL = {
     }
   }
 }
-
 
 export default SimpleGraphQL

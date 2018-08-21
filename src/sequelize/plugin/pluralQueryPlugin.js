@@ -124,9 +124,8 @@ const StringConditionType = new graphql.GraphQLInputObjectType({
   }
 })
 
-
-const _cvtKey = (key:string):Symbol|string =>{
-  return (Op[key]) ? Op[key] : key
+const _cvtKey = (key:string):any => {
+  return (Op.hasOwnProperty(key)) ? Op[key] : key
 }
 
 export default function pluralQuery (schema:Schema<any>, options:any):void {
@@ -136,8 +135,7 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
   const conditionFieldKeys = []
   // 过滤不可搜索的field
   _.forOwn(schema.config.fields, (value, key) => {
-    if(!value)
-        return
+    if (!value) { return }
 
     if (typeof value === 'string' || (typeof value.$type === 'string') || (value.$type instanceof RemoteSchema)) {
       if (!key.endsWith('Id')) {
@@ -178,7 +176,6 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
     config = options
   }
 
-
   // 生产
   schema.queries({
     [name]: {
@@ -205,8 +202,8 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           }),
           // _suportJsonCondition:true,
           description: 'Query Condition'
-        } ,
-        jsonCondition:{
+        },
+        jsonCondition: {
           $type: Type.GraphQLScalarTypes.Json
         },
         sort: {
@@ -247,38 +244,32 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
         })
 
         const replaceOp = (obj) => {
-          if(typeof obj === 'object'){
+          if (typeof obj === 'object') {
             const res = {}
-            _.forOwn(obj,(value,key)=>{
-              if(!searchFields[key] && !Op[key] && key !== 'id')
-                throw new Error(`Invalid field:${key} in schema ${schema.name},please check it`)
-              key = _cvtKey(key)
-              if (_.isArray(value)){
-                res[key] = _.map(value,(v)=>{return replaceOp(v)})
-              }else if(typeof value === 'object') {
-                res[key] = replaceOp(value)
-              }else{
-                res[key] = value
+            _.forOwn(obj, (value, key) => {
+              if (!searchFields.hasOwnProperty(key) && !Op.hasOwnProperty(key) && key !== 'id') { throw new Error(`Invalid field:${key} in schema ${schema.name},please check it`) }
+              const finalKey = _cvtKey(key)
+              if (_.isArray(value)) {
+                res[finalKey] = _.map(value, (v) => { return replaceOp(v) })
+              } else if (typeof value === 'object') {
+                res[finalKey] = replaceOp(value)
+              } else {
+                res[finalKey] = value
               }
             })
             return res
-          }else{
+          } else {
             return obj
           }
         }
 
-        try {
-          const cond = replaceOp(jsonCondition)
-          if(cond) {
-            //console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
-            if (!condition[Op.and]) {
-              condition[Op.and] = []
-            }
-            condition[Op.and].push(cond)
+        const cond = replaceOp(jsonCondition)
+        if (cond) {
+          // console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
+          if (!condition[Op.and]) {
+            condition[Op.and] = []
           }
-        }catch(err){
-          throw err
-          console.log(err.message)
+          condition[Op.and].push(cond)
         }
 
         const include = []
@@ -299,14 +290,14 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
             if (typeof condition[key] !== 'undefined') {
               if (!includeFields[key]) {
                 const type = associationType(schema, key)
-                if(type) {
+                if (type) {
                   includeFields[key] = true
                   include.push({
                     model: sgContext.models[type],
                     as: key,
                     required: true
                   })
-                }else{
+                } else {
                   throw new Error(`unknown associated model:${key} in ${schema.name}`)
                 }
               }

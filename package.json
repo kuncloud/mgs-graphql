@@ -1,6 +1,6 @@
 {
   "name": "mgs-graphql",
-  "version": "1.0.28",
+  "version": "1.0.29",
   "description": "The simple way to generates GraphQL schemas and Sequelize models from your models definition.",
   "main": "lib/index.js",
   "scripts": {
@@ -74,6 +74,10 @@
       "/demo/"
     ]
   },
+  "pre-commit": [
+    "format",
+    "flow"
+  ],
   "jest": {
     "verbose": true,
     "setupTestFrameworkScriptFile": "./src/sequelize/__tests__/setup.js",

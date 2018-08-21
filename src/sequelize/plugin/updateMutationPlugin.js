@@ -5,7 +5,7 @@ import * as graphql from 'graphql'
 import Schema from '../../definition/Schema'
 import StringHelper from '../../utils/StringHelper'
 import RemoteSchema from '../../definition/RemoteSchema'
-import { validateType } from "../../utils/helper"
+import { validateType } from '../../utils/helper'
 
 export default function updateMutation (schema:Schema<any>, options:any):void {
   const name = 'update' + StringHelper.toInitialUpperCase(schema.name)

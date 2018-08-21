@@ -10,12 +10,12 @@
 /**
  * fixes indentation by removing leading spaces and tabs from each line
  */
-function fixIndent(str: string): string {
+function fixIndent (str: string): string {
   const trimmedStr = str
     .replace(/^\n*/m, '') //  remove leading newline
-    .replace(/[ \t]*$/, ''); // remove trailing spaces and tabs
-  const indent = /^[ \t]*/.exec(trimmedStr)[0]; // figure out indent
-  return trimmedStr.replace(RegExp('^' + indent, 'mg'), ''); // remove indent
+    .replace(/[ \t]*$/, '') // remove trailing spaces and tabs
+  const indent = /^[ \t]*/.exec(trimmedStr)[0] // figure out indent
+  return trimmedStr.replace(RegExp('^' + indent, 'mg'), '') // remove indent
 }
 
 /**
@@ -30,21 +30,21 @@ function fixIndent(str: string): string {
  * `
  * str === "{\n  test\n}\n";
  */
-export default function dedent(
+export default function dedent (
   strings: string | Array<string>,
   ...values: Array<string>
 ): string {
   // when used as an ordinary function, allow passing a singleton string
-  const strArray = typeof strings === 'string' ? [strings] : strings;
-  const numValues = values.length;
+  const strArray = typeof strings === 'string' ? [strings] : strings
+  const numValues = values.length
 
   const str = strArray.reduce((prev, cur, index) => {
-    let next = prev + cur;
+    let next = prev + cur
     if (index < numValues) {
-      next += values[index]; // interpolation
+      next += values[index] // interpolation
     }
-    return next;
-  }, '');
+    return next
+  }, '')
 
-  return fixIndent(str);
+  return fixIndent(str)
 }

@@ -15,7 +15,7 @@ export default function hasManyLinkedField (schema:Schema<any>, options:any):voi
       return
     }
 
-    invariant(!(config.target instanceof RemoteSchema),'unsupported remote schema as has many target:${schema.name}:${key},coming soon')
+    invariant(!(config.target instanceof RemoteSchema), `unsupported remote schema as has many target:${schema.name}:${key},coming soon`)
     const args:any = {}
     if (config.conditionFields) {
       args['condition'] = config.conditionFields
@@ -24,15 +24,15 @@ export default function hasManyLinkedField (schema:Schema<any>, options:any):voi
       schema.links({
         [key]: {
           config: config.config,
-          args:   args,
-          $type:  [config.target],
+          args: args,
+          $type: [config.target],
           resolve: async function (root, args, context, info, sgContext) {
             let condition = config.scope || {}
             if (args && args.condition) {
               condition = {...condition, ...args.condition}
             }
-            const sort  = config.sort || [{field: 'id', order: 'ASC'}]
-            let sourceKey  = config.sourceKey || 'id'
+            const sort = config.sort || [{field: 'id', order: 'ASC'}]
+            let sourceKey = config.sourceKey || 'id'
             let foreignKey = config.foreignKey || (config.foreignField + 'Id')
             condition[foreignKey] = root[sourceKey]
 

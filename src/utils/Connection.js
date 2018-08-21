@@ -1,30 +1,29 @@
 'use strict'
-
+import Sequelize from 'sequelize'
 import _ from 'lodash'
 
 const resolve = async function connectionResolve (Model, {args = {}, condition = {}, include = [], sort = []}) {
-
-  let {after, first, before, last} = args;
+  let {after, first, before, last} = args
   first = (first == null ? 100 : first)
 
   const count = await Model.count({
     where: {
-      ...condition,
+      ...condition
     },
-    include,
-  });
+    include
+  })
   if (last || before) {
     throw new Error('Argument last or before is not supported!')
   }
-  const offset = Math.max(after != null ? parseInt(after) : 0, 0);
+  const offset = Math.max(after != null ? parseInt(after) : 0, 0)
 
-  sort = sort || args.sort || [];
+  sort = sort || args.sort || []
 
   let order = sort.map(({field, order}) => [field, order])
 
   const result = await Model.findAll({
     where: {
-      ...condition,
+      ...condition
     },
     include,
     limit: first,
