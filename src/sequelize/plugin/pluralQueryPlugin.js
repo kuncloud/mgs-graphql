@@ -1,12 +1,14 @@
 // @flow
 import * as _ from 'lodash'
 import * as graphql from 'graphql'
+import * as relay from 'graphql-relay'
 import Sequelize from 'sequelize'
 import Schema from '../../definition/Schema'
 import Type from '../../type'
 import StringHelper from '../../utils/StringHelper'
 import resolveConnection from '../resolveConnection'
 import RemoteSchema from '../../definition/RemoteSchema'
+import Transformer from '../../transformer'
 
 const Op = Sequelize.Op
 
@@ -176,6 +178,18 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
     config = options
   }
 
+  const getType = (value) => {
+    let type = value
+    while (type['$type'] || _.isArray(type)) {
+      if (type['$type']) {
+        type = type['$type']
+      } else if (_.isArray(type)) {
+        type = type[0]
+      }
+    }
+    return type
+  }
+
   // 生产
   schema.queries({
     [name]: {
@@ -184,14 +198,7 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
       args: {
         condition: {
           $type: _.mapValues(searchFields, (value) => {
-            let type = value
-            while (type['$type'] || _.isArray(type)) {
-              if (type['$type']) {
-                type = type['$type']
-              } else if (_.isArray(type)) {
-                type = type[0]
-              }
-            }
+            let type = getType(value)
             if (value['$type']) {
               type = Object.assign({}, value, {$type: type, required: false})
             }
@@ -203,8 +210,11 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           // _suportJsonCondition:true,
           description: 'Query Condition'
         },
-        jsonCondition: {
-          $type: Type.GraphQLScalarTypes.Json
+        options: {
+          $type:{
+            where: Type.GraphQLScalarTypes.Json
+          },
+          description: 'Sequelize.findAll(option)',
         },
         sort: {
           $type: [{field: String, order: SortEnumType}],
@@ -227,7 +237,7 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
                                sgContext) {
         const dbModel = sgContext.models[schema.name]
 
-        let {sort = [{field: 'id', order: 'ASC'}], condition = {}, jsonCondition} = (args != null ? args : {})
+        let {sort = [{field: 'id', order: 'ASC'}], condition = {}, options} = (args != null ? args : {})
 
         if (dbModel.options.underscored) {
           for (let item of sort) {
@@ -243,12 +253,46 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           }
         })
 
+        const cvtGId = (key,src) => {
+          if (_.isArray(src)) {
+            return _.map(src, (v) => { return cvtGId(key,v) })
+          }else if(typeof src === 'object' || src instanceof Object) {
+            return _.mapValues(src,(v,k) => {
+              if(Op.hasOwnProperty(k))
+                return cvtGId(key,v)
+              return cvtGId(k,v)
+            })
+          } else if(typeof src === 'string') {
+            if(key === 'id'){
+              const {type, id} = relay.fromGlobalId(src)
+              return (type === schema.name) ? id : src
+            }else if (searchFields.hasOwnProperty(key)){
+              const inputField = Transformer.convert(key,key,searchFields[key])
+              if(inputField && (inputField.type instanceof graphql.GraphQLScalarType && inputField.type.name.endsWith('Id'))){
+                const typeName = inputField.type.name.substr(0, inputField.type.name.length - 'Id'.length)
+                const {type, id} = relay.fromGlobalId(src)
+                return (type === typeName) ? id : src
+              }
+            }
+
+            return src
+          }else{
+            return src
+          }
+
+        }
+
         const replaceOp = (obj) => {
+          if(!obj)
+            return obj
+
           if (typeof obj === 'object') {
+
             const res = {}
             _.forOwn(obj, (value, key) => {
               if (!searchFields.hasOwnProperty(key) && !Op.hasOwnProperty(key) && key !== 'id') { throw new Error(`Invalid field:${key} in schema ${schema.name},please check it`) }
-              const finalKey = _cvtKey(key)
+
+              const finalKey  = _cvtKey(key)
               if (_.isArray(value)) {
                 res[finalKey] = _.map(value, (v) => { return replaceOp(v) })
               } else if (typeof value === 'object') {
@@ -256,6 +300,7 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
               } else {
                 res[finalKey] = value
               }
+
             })
             return res
           } else {
@@ -263,14 +308,19 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           }
         }
 
-        const cond = replaceOp(jsonCondition)
-        if (cond) {
-          // console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
-          if (!condition[Op.and]) {
-            condition[Op.and] = []
+        if(options && !_.isEmpty(options.where)){
+          const where  = cvtGId('where',options.where)
+          console.log('dd',where)
+          const cond = replaceOp(where)
+          if (cond) {
+            // console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
+            if (!condition[Op.and]) {
+              condition[Op.and] = []
+            }
+            condition[Op.and].push(cond)
           }
-          condition[Op.and].push(cond)
         }
+
 
         const include = []
         const includeFields = {}
