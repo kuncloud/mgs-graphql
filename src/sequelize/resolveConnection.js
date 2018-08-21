@@ -52,7 +52,7 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
     limit: first,
     offset: offset
   })
-  console.log('fr:',result)
+  // console.log('fr:',result)
 
   let index = 0
   let startCursor = offset + 1

@@ -289,7 +289,7 @@ export default class Context {
           'id': {
             type: GraphQLString,
             resolve: (root) => {
-              console.log('fake id',root)
+              // console.log('fake id',root)
               return 'MGS only fake ,not supported'
             }
           }
