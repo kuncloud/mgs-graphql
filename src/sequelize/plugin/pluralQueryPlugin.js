@@ -283,19 +283,14 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
         const replaceOp = (obj) => {
           if (!obj) { return obj }
 
-          if (typeof obj === 'object' && !(obj instanceof Array)) {
+          if (_.isArray(obj)) {
+            return _.map(obj, (v) => { return replaceOp(v) })
+          } else if (typeof obj === 'object' && !(obj instanceof Array)) {
             const res = {}
             _.forOwn(obj, (value, key) => {
               if (!searchFields.hasOwnProperty(key) && !Op.hasOwnProperty(key) && key !== 'id') { throw new Error(`Invalid field:${key} in schema ${schema.name},please check it`) }
-
               const finalKey = _cvtKey(key)
-              if (_.isArray(value)) {
-                res[finalKey] = _.map(value, (v) => { return replaceOp(v) })
-              } else if (typeof value === 'object') {
-                res[finalKey] = replaceOp(value)
-              } else {
-                res[finalKey] = value
-              }
+              res[finalKey] = replaceOp(value)
             })
             return res
           } else {
