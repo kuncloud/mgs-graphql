@@ -2,7 +2,7 @@
 
 import Sequelize from 'sequelize'
 import _ from 'lodash'
-import {GraphQLSchema, GraphQLObjectType, GraphQLNonNull} from 'graphql'
+import {GraphQLSchema, GraphQLObjectType, GraphQLNonNull,GraphQLID} from 'graphql'
 import type {GraphQLFieldConfig} from 'graphql'
 // import * as relay from 'graphql-relay'
 // import invariant from './utils/invariant'
@@ -103,89 +103,90 @@ const SimpleGraphQL = {
       }
     })
 
-    // const viewerConfig = _.get(options, 'query.viewer', 'AllQuery')
-    // if (viewerConfig === 'AllQuery') {
-    //   context.graphQLObjectTypes['Viewer'] = new GraphQLObjectType({
-    //     name: 'Viewer',
-    //     interfaces: [context.nodeInterface],
-    //     fields: () => {
-    //       const fields = {
-    //         id: {type: new GraphQLNonNull(GraphQLID)}
-    //       }
-    //       _.forOwn(finalQueries, (value, key) => {
-    //         if (key !== 'viewer' && key !== 'relay') fields[key] = value
-    //       })
-    //       // if(!_.isEmpty(schemaMerged)){
-    //       //   for(let i=0;i<schemaMerged.length;++i){
-    //       //     const one = schemaMerged[i].getQueryType()
-    //       //     _.forOwn(one._typeConfig.fields, (value, key) => {
-    //       //       if (key !== 'viewer' && key !== 'relay') fields[key] = value
-    //       //     })
-    //       //   }
-    //       // }
-    //
-    //       return fields
-    //     }
-    //   })
-    //
-    //   finalQueries['viewer'] = {
-    //     description: 'Default Viewer implement to include all queries.',
-    //     type: new GraphQLNonNull(((context.graphQLObjectTypes['Viewer']:any):GraphQLObjectType)),
-    //     resolve: () => {
-    //       return {
-    //         _type: 'Viewer',
-    //         id: relay.toGlobalId('Viewer', 'viewer')
-    //       }
-    //     }
-    //   }
-    //
-    // } else if (viewerConfig === 'FromModelQuery') {
-    //   if (!finalQueries['viewer']) {
-    //     throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
-    //   }
-    //   // TODO check whether viewer.type is a Node
-    // } else {
-    //   const fieldConfig = Transformer.toGraphQLFieldConfig(
-    //     'viewer',
-    //     'Payload',
-    //     viewerConfig.$type,
-    //     context)
-    //   finalQueries['viewer'] = {
-    //     type: fieldConfig.type,
-    //     resolve: context.wrapQueryResolve(viewerConfig),
-    //     description: viewerConfig.description
-    //   }
-    // }
+    const viewerConfig = _.get(options, 'query.viewer', 'AllQuery')
+    if (viewerConfig === 'AllQuery') {
+      context.graphQLObjectTypes['Viewer'] = new GraphQLObjectType({
+        name: 'Viewer',
+        interfaces: [context.nodeInterface],
+        fields: () => {
+          const fields = {
+            id: {type: new GraphQLNonNull(GraphQLID)}
+          }
+          _.forOwn(finalQueries, (value, key) => {
+            if (key !== 'viewer' && key !== 'relay') fields[key] = value
+          })
+          // if(!_.isEmpty(schemaMerged)){
+          //   for(let i=0;i<schemaMerged.length;++i){
+          //     const one = schemaMerged[i].getQueryType()
+          //     _.forOwn(one._typeConfig.fields, (value, key) => {
+          //       if (key !== 'viewer' && key !== 'relay') fields[key] = value
+          //     })
+          //   }
+          // }
 
-    // finalQueries['node'] = {
-    //   name: 'node',
-    //   description: 'Fetches an object given its ID',
-    //   type: context.nodeInterface,
-    //   args: {
-    //     id: {
-    //       type: new GraphQLNonNull(GraphQLID),
-    //       description: 'The ID of an object'
-    //     }
-    //   },
-    //   resolve: context.wrapQueryResolve({
-    //     name: 'node',
-    //     $type: context.nodeInterface,
-    //     resolve: async function (args, context, info, sgContext, invoker) {
-    //       const id = relay.fromGlobalId(args.id)
-    //       if (id.type === 'Viewer') {
-    //         if (finalQueries['viewer'] && finalQueries['viewer'].resolve) {
-    //           return finalQueries['viewer'].resolve(null, args, context, info)
-    //         }
-    //       }
-    //       if (!sgContext.models[id.type]) return null
-    //       const record = await sgContext.models[id.type].findOne({where: {id: id.id}})
-    //       if (record) {
-    //         record._type = id.type
-    //       }
-    //       return record
-    //     }
-    //   })
-    // }
+          return fields
+        }
+      })
+
+      finalQueries['viewer'] = {
+        description: 'Default Viewer implement to include all queries.',
+        type: new GraphQLNonNull(((context.graphQLObjectTypes['Viewer']:any):GraphQLObjectType)),
+        resolve: () => {
+          return {
+            _type: 'Viewer',
+            id: relay.toGlobalId('Viewer', 'viewer')
+          }
+        }
+      }
+
+    } else if (viewerConfig === 'FromModelQuery') {
+      if (!finalQueries['viewer']) {
+        throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
+      }
+      // TODO check whether viewer.type is a Node
+    } else if(typeof viewerConfig === 'object'){
+      const fieldConfig = Transformer.toGraphQLFieldConfig(
+        'viewer',
+        'Payload',
+        viewerConfig.$type,
+        context)
+      finalQueries['viewer'] = {
+        type: fieldConfig.type,
+        resolve: context.wrapQueryResolve(viewerConfig),
+        description: viewerConfig.description
+      }
+    }
+
+
+    finalQueries['node'] = {
+      name: 'node',
+      description: 'Fetches an object given its ID',
+      type: context.nodeInterface,
+      args: {
+        id: {
+          type: new GraphQLNonNull(GraphQLID),
+          description: 'The ID of an object'
+        }
+      },
+      resolve: context.wrapQueryResolve({
+        name: 'node',
+        $type: context.nodeInterface,
+        resolve: async function (args, context, info, sgContext, invoker) {
+          const id = relay.fromGlobalId(args.id)
+          if (id.type === 'Viewer') {
+            if (finalQueries['viewer'] && finalQueries['viewer'].resolve) {
+              return finalQueries['viewer'].resolve(null, args, context, info)
+            }
+          }
+          if (!sgContext.models[id.type]) return null
+          const record = await sgContext.models[id.type].findOne({where: {id: id.id}})
+          if (record) {
+            record._type = id.type
+          }
+          return record
+        }
+      })
+    }
 
     const rootQuery = new GraphQLObjectType({
       name: 'Query',
@@ -209,19 +210,17 @@ const SimpleGraphQL = {
         _.forOwn(context.mutations, (value, key) => {
           const inputFields = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
           const outputFields = {}
-          // const payloadFields = _.get(options, 'mutation.payloadFields', [])
-          // for (const field of payloadFields) {
-          //
-          //   console.log('mutation:',field)
-          //   if (typeof field === 'string') {
-          //     if (!finalQueries[field]) {
-          //       throw new Error('Incorrect buildOption. Query[' + field + '] not exist.')
-          //     }
-          //     outputFields[field] = finalQueries[field]
-          //   } else {
-          //     outputFields[field.name] = field
-          //   }
-          // }
+          const payloadFields = _.get(options, 'mutation.payloadFields', [])
+          for (const field of payloadFields) {
+            if (typeof field === 'string') {
+              if (!finalQueries[field]) {
+                throw new Error('Incorrect buildOption. Query[' + field + '] not exist.')
+              }
+              outputFields[field] = finalQueries[field]
+            } else {
+              outputFields[field.name] = field
+            }
+          }
           _.forOwn(value.outputFields, (fValue, fKey) => {
             outputFields[fKey] = Transformer.toGraphQLFieldConfig(
               key + '.' + fKey,
