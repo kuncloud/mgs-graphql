@@ -274,12 +274,9 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
                 return (type === typeName) ? id : src
               }
             }
-
-            return src
-          }else{
-            return src
           }
 
+          return src
         }
 
         const replaceOp = (obj) => {
@@ -310,7 +307,7 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
 
         if(options && !_.isEmpty(options.where)){
           const where  = cvtGId('where',options.where)
-          console.log('dd',where)
+          // console.log('dd',where)
           const cond = replaceOp(where)
           if (cond) {
             // console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
