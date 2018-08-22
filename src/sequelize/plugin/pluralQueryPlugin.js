@@ -211,10 +211,10 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           description: 'Query Condition'
         },
         options: {
-          $type:{
+          $type: {
             where: Type.GraphQLScalarTypes.Json
           },
-          description: 'Sequelize.findAll(option)',
+          description: 'Sequelize.findAll(option)'
         },
         sort: {
           $type: [{field: String, order: SortEnumType}],
@@ -253,22 +253,21 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           }
         })
 
-        const cvtGId = (key,src) => {
+        const cvtGId = (key, src) => {
           if (_.isArray(src)) {
-            return _.map(src, (v) => { return cvtGId(key,v) })
-          }else if(typeof src === 'object' || src instanceof Object) {
-            return _.mapValues(src,(v,k) => {
-              if(Op.hasOwnProperty(k))
-                return cvtGId(key,v)
-              return cvtGId(k,v)
+            return _.map(src, (v) => { return cvtGId(key, v) })
+          } else if (typeof src === 'object' || src instanceof Object) {
+            return _.mapValues(src, (v, k) => {
+              if (Op.hasOwnProperty(k)) { return cvtGId(key, v) }
+              return cvtGId(k, v)
             })
-          } else if(typeof src === 'string') {
-            if(key === 'id'){
+          } else if (typeof src === 'string') {
+            if (key === 'id') {
               const {type, id} = relay.fromGlobalId(src)
               return (type === schema.name) ? id : src
-            }else if (searchFields.hasOwnProperty(key)){
-              const inputField = Transformer.convert(key,key,searchFields[key])
-              if(inputField && (inputField.type instanceof graphql.GraphQLScalarType && inputField.type.name.endsWith('Id'))){
+            } else if (searchFields.hasOwnProperty(key)) {
+              const inputField = Transformer.convert(key, key, searchFields[key])
+              if (inputField && (inputField.type instanceof graphql.GraphQLScalarType && inputField.type.name.endsWith('Id'))) {
                 const typeName = inputField.type.name.substr(0, inputField.type.name.length - 'Id'.length)
                 const {type, id} = relay.fromGlobalId(src)
                 return (type === typeName) ? id : src
@@ -276,23 +275,20 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
             }
 
             return src
-          }else{
+          } else {
             return src
           }
-
         }
 
         const replaceOp = (obj) => {
-          if(!obj)
-            return obj
+          if (!obj) { return obj }
 
-          if (typeof obj === 'object') {
-
+          if (typeof obj === 'object' && !(obj instanceof Array)) {
             const res = {}
             _.forOwn(obj, (value, key) => {
               if (!searchFields.hasOwnProperty(key) && !Op.hasOwnProperty(key) && key !== 'id') { throw new Error(`Invalid field:${key} in schema ${schema.name},please check it`) }
 
-              const finalKey  = _cvtKey(key)
+              const finalKey = _cvtKey(key)
               if (_.isArray(value)) {
                 res[finalKey] = _.map(value, (v) => { return replaceOp(v) })
               } else if (typeof value === 'object') {
@@ -300,7 +296,6 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
               } else {
                 res[finalKey] = value
               }
-
             })
             return res
           } else {
@@ -308,9 +303,9 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           }
         }
 
-        if(options && !_.isEmpty(options.where)){
-          const where  = cvtGId('where',options.where)
-          console.log('dd',where)
+        if (options && !_.isEmpty(options.where)) {
+          const where = cvtGId('where', options.where)
+          // console.log('dd', where)
           const cond = replaceOp(where)
           if (cond) {
             // console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
@@ -320,7 +315,6 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
             condition[Op.and].push(cond)
           }
         }
-
 
         const include = []
         const includeFields = {}

@@ -1,5 +1,5 @@
 // @flow
-import {convert,toGraphQLInputFieldMap} from './toGraphQLInputFieldMap'
+import {convert, toGraphQLInputFieldMap} from './toGraphQLInputFieldMap'
 import toGraphQLFieldConfig from './toGraphQLFieldConfig'
 import mutationWithClientMutationId from './mutationWithClientMutationId'
 

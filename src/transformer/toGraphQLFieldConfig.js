@@ -9,7 +9,7 @@ import type {GraphQLFieldResolver, GraphQLOutputType} from 'graphql'
 import Type from '../type'
 import Context from '../Context'
 import StringHelper from '../utils/StringHelper'
-import toGraphQLInputFieldMap from './toGraphQLInputFieldMap'
+import {toGraphQLInputFieldMap} from './toGraphQLInputFieldMap'
 import RemoteSchema from '../definition/RemoteSchema'
 import invariant from '../utils/invariant'
 

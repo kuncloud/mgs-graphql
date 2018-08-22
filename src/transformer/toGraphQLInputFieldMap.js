@@ -142,8 +142,6 @@ const convert = (name:string,
 }
 
 const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):GraphQLInputFieldConfigMap {
-
-
   const fieldMap:GraphQLInputFieldConfigMap = {}
 
   _.forOwn(fields, (value, key) => {
