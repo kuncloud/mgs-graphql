@@ -123,7 +123,7 @@ class RemoteDirective extends SchemaRemoteVisitor {
 }
 
 function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: Array<GraphQLSchema>, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
-  if (_.isEmpty(schemaMerged) && _.isEmpty(resolvers)) { return schema }
+  if (_.isEmpty(schemaMerged) && (_.isEmpty(resolvers) || (_.isEmpty(resolvers.Query) && _.isEmpty(resolvers.Mutation)))) { return schema }
 
   SchemaRemoteVisitor.visitTheSchema(schema, {
     prefix,
