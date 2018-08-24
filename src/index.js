@@ -210,9 +210,9 @@ const SimpleGraphQL = {
           }
         }
       } else if (viewerConfig === 'FromModelQuery') {
-        if (!finalQueries['viewer']) {
-          throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
-        }
+        // if (!finalQueries['viewer']) {
+        //   throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
+        // }
         // TODO check whether viewer.type is a Node
       } else if (viewerConfig && viewerConfig.$type) {
         const fieldConfig = Transformer.toGraphQLFieldConfig(
@@ -457,9 +457,9 @@ const SimpleGraphQL = {
         }
         schema = createAllQuery(schema, context)
       } else if (viewerConfig === 'FromModelQuery') {
-        if (!finalQueries['viewer']) {
-          throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
-        }
+        // if (!finalQueries['viewer']) {
+        //   throw new Error('Build option has config "query.view=FromModelQuery" but query "viewer" not defined.')
+        // }
         // TODO check whether viewer.type is a Node
       } else if (typeof viewerConfig === 'object') {
         throw new Error('multschema object viewer not supported')
