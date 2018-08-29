@@ -1,5 +1,5 @@
 // @flow
-import {isOutputType, GraphQLNonNull, GraphQLSchema,GraphQLUnionType, GraphQLInterfaceType,GraphQLObjectType, GraphQLList} from 'graphql'
+import {isOutputType, GraphQLNonNull, getNamedType,GraphQLSchema,GraphQLUnionType, GraphQLInterfaceType,GraphQLObjectType, GraphQLList} from 'graphql'
 import _ from 'lodash'
 import {
   mergeSchemas
@@ -46,7 +46,7 @@ class SchemaRemoteVisitor extends SchemaVisitor {
       } else if (type.type instanceof GraphQLNonNull) {
         if (isStub(type.type.ofType)) {
           visitedType = type
-          remoteType = type.type.ofType
+          remoteType  = type.type.ofType
         }
       } else if (isStub(type.type)) {
         visitedType = type
@@ -98,9 +98,13 @@ class SchemaRemoteVisitor extends SchemaVisitor {
   }
 }
 
+
+
+
 class RemoteDirective extends SchemaRemoteVisitor {
   visitFieldDefinition (field: GraphQLField<any, any>) {
     invariant(!_.isEmpty(this.args), 'Must provide args')
+
     const getTargetSchema = (modeName: string, srcSchemas: {[key:string]:GraphQLSchema}): ?{schemaName:string,obj:GraphQLNamedType} => {
       if (_.isEmpty(srcSchemas)) { return }
 
@@ -111,8 +115,8 @@ class RemoteDirective extends SchemaRemoteVisitor {
             obj:target.getType(modeName),
             schemaName:key
           }
-
-          return false
+          if(found.obj && ( _.isEmpty(found.obj.description) || !found.obj.description.startsWith('__') )  )
+            return false
         }
       })
 
@@ -127,7 +131,9 @@ class RemoteDirective extends SchemaRemoteVisitor {
       }else if(obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType){
         // console.log('addObj:',schemaName,obj.name)
         if(!otherTypes[schemaName][obj.name]){
+          invariant(!obj.description || !obj.description.startsWith('__'),`graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description}`)
           otherTypes[schemaName][obj.name] = obj
+          obj.description = '__' + (obj.description ? '' : obj.description)
           const fields = obj.getFields()
           _.forOwn(fields,(value,key)=>{
             addMergedObject(schemaName,value.type)
@@ -166,14 +172,13 @@ function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: {[key:string]:Gra
   otherTypes = _.mapValues(schemaMerged,(value)=>{
     return {}
   })
-  // console.log('begin:',otherTypes)
+
   SchemaRemoteVisitor.visitTheSchema(schema, {
     prefix,
     srcSchema: schemaMerged
   })
-  // console.log('other types:')
+
   _.forOwn(otherTypes,(value,key)=>{
-    console.log(key,value)
     if(_.isEmpty(value))
       throw new Error(`merged schema ${key}:none of schema is merging`)
   })

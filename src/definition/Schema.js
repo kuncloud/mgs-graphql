@@ -18,7 +18,7 @@ export default class Schema<T> {
     statics:{[id:string]: any}
   }
 
-  remoteLinkConfig:RemoteLinkConfig
+  // remoteLinkConfig:RemoteLinkConfig
 
   constructor (name:string, options:SchemaOptionConfig = {}) {
     this.name = name
@@ -37,7 +37,7 @@ export default class Schema<T> {
       methods: {},
       statics: {}
     }
-    this.remoteLinkConfig = {}
+    // this.remoteLinkConfig = {}
   }
 
   /**
@@ -49,10 +49,6 @@ export default class Schema<T> {
     return this
   }
 
-  remoteLinks (config:RemoteLinkConfig):Schema<T> {
-    this.remoteLinkConfig = Object.assign(this.remoteLinkConfig, config)
-    return this
-  }
 
   /**
    * Add the model link fields, and each link generate a GraphQL field but no corresponding database column.
