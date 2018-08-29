@@ -109,12 +109,12 @@ const SimpleGraphQL = {
       }
     })
 
-    const schemaMerged = []
-    if (!_.isEmpty(context.remoteInfo) && !_.isEmpty(context.remoteInfo['schema'])) {
-      _.forOwn(context.remoteInfo['schema'], (value, key) => {
-        schemaMerged.push(value)
-      })
-    }
+    const schemaMerged =  context.remoteInfo && context.remoteInfo['schema']
+    // if (!_.isEmpty(context.remoteInfo) && !_.isEmpty(context.remoteInfo['schema'])) {
+    //   _.forOwn(context.remoteInfo['schema'], (value, key) => {
+    //     schemaMerged.push(value)
+    //   })
+    // }
 
     const createNodeQuery = (NodeType, viewerResolve) => {
       return {

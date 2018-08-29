@@ -13,7 +13,9 @@ import {
 } from 'graphql-tools/dist/schemaVisitor'
 import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
-
+// let otherTypes:{
+//   [key:string]:GraphQLObjectType
+// } = []
 class SchemaRemoteVisitor extends SchemaVisitor {
   static visitTheSchema (schema: GraphQLSchema,
                         context: {
@@ -97,22 +99,33 @@ class SchemaRemoteVisitor extends SchemaVisitor {
 class RemoteDirective extends SchemaRemoteVisitor {
   visitFieldDefinition (field: GraphQLField<any, any>) {
     invariant(!_.isEmpty(this.args), 'Must provide args')
-    const getTargetSchema = (modeName: string, srcSchemas: Array<GraphQLSchema>): ?GraphQLNamedType => {
+    const getTargetSchema = (modeName: string, srcSchemas: {[key:string]:GraphQLSchema}): ?GraphQLNamedType => {
       if (_.isEmpty(srcSchemas)) { return }
 
-      for (let i = 0; i < srcSchemas.length; ++i) {
-        const target = srcSchemas[i]
+      let found = undefined
+      _.forOwn(srcSchemas,(target,key) => {
+        // console.log('dd',key,target)
         if (target && target.getType(modeName)) {
-          return target.getType(modeName)
+          found = target.getType(modeName)
+          return false
         }
-      }
+      })
+
+      return found
     }
 
-    const schemas = [...this.context.srcSchema, this.schema]
-    const gqlObj = getTargetSchema(this.args.target, schemas)
+    const gqlObj = getTargetSchema(this.args.target, this.context.srcSchema)
     invariant(isOutputType(gqlObj), `invalid remote link ${field.name} => ${this.args.target}: not output type(maybe null)`)
 
     if (gqlObj) {
+      // if(!_.isEmpty(gqlObj.name) && !otherTypes.hasOwnProperty(gqlObj.name)){
+      //   console.log('add other:',gqlObj.name)
+      //   otherTypes[gqlObj.name] = gqlObj
+      //   const types = gqlObj.getTypes()
+      //   //for()
+      // }
+      // invariant(otherTypes[gqlObj.name] == gqlObj,`Must same output graphql object:${gqlObj.name}`)
+
       if (field.type instanceof GraphQLList) {
         field.type = new GraphQLList(gqlObj)
       } else {
@@ -122,14 +135,21 @@ class RemoteDirective extends SchemaRemoteVisitor {
   }
 }
 
-function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: Array<GraphQLSchema>, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
-  if (_.isEmpty(schemaMerged) && (_.isEmpty(resolvers) || (_.isEmpty(resolvers.Query) && _.isEmpty(resolvers.Mutation)))) { return schema }
+function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: {[key:string]:GraphQLSchema}, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
+  if (_.isEmpty(schemaMerged)) { return schema }
 
   SchemaRemoteVisitor.visitTheSchema(schema, {
     prefix,
     srcSchema: schemaMerged
   })
-  return mergeSchemas({schemas: [schema, ...schemaMerged], resolvers})
+  // console.log('other types:',otherTypes)
+  // if(_.isEmpty(otherTypes)) {
+  //   throw new Error('sche')
+  //   return schema
+  // }
+
+
+  return mergeSchemas({schemas: [schema, ...(_.map(schemaMerged,(value)=>value)) ], resolvers})
 }
 
 module.exports = {
