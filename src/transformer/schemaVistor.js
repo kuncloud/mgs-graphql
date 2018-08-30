@@ -12,7 +12,7 @@ import _ from 'lodash'
 import {
   mergeSchemas
 } from 'graphql-tools'
-import type {GraphQLField, GraphQLOutputType} from 'graphql'
+import type {GraphQLField, GraphQLOutputType, GraphQLNamedType} from 'graphql'
 import type {IResolversParameter} from 'graphql-tools'
 import {
   SchemaVisitor,
@@ -138,7 +138,6 @@ class RemoteDirective extends SchemaRemoteVisitor {
       } else if (obj instanceof GraphQLNonNull) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType) {
-
         if (!otherTypes[schemaName][obj.name]) {
           invariant(!obj.description || !obj.description.startsWith('__'),
             `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
@@ -166,7 +165,6 @@ class RemoteDirective extends SchemaRemoteVisitor {
           // console.log('addObj2:',schemaName,obj.name)
           otherTypes[schemaName][obj.name] = obj
           obj.description = '__' + (obj.description ? obj.description : '')
-
         }
       }
     }
