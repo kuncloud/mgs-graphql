@@ -23,7 +23,7 @@ import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
 let otherTypes: {
   [key:string]:{
-    [key:string]:GraphQLObjectType|GraphQLInterfaceType
+    [key:string]:GraphQLNamedType
   }
 } = {}
 class SchemaRemoteVisitor extends SchemaVisitor {
@@ -66,7 +66,7 @@ class SchemaRemoteVisitor extends SchemaVisitor {
         try {
           const info = JSON.parse(remoteType.description)
           if (!_.isEmpty(info)) {
-            console.log(`visitorSelector got it:${visitedType.name},${remoteType.name},${methodName}:`, remoteType.description)
+            // console.log(`visitorSelector got it:${visitedType.name},${remoteType.name},${methodName}:`, remoteType.description)
             visitors.push(new RemoteDirective({
               name: 'remote',
               args: {...info},
@@ -138,14 +138,19 @@ class RemoteDirective extends SchemaRemoteVisitor {
       } else if (obj instanceof GraphQLNonNull) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType) {
-        // console.log('addObj:',schemaName,obj.name)
+
         if (!otherTypes[schemaName][obj.name]) {
           invariant(!obj.description || !obj.description.startsWith('__'),
             `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
+          // console.log('addObj1:',schemaName,obj.name)
           otherTypes[schemaName][obj.name] = obj
           obj.description = '__' + (obj.description ? obj.description : '')
           const fields = obj.getFields()
           _.forOwn(fields, (value, key) => {
+            const args = value.args
+            for (let i = 0; i < args.length; ++i) {
+              addMergedObject(schemaName, args[i].type)
+            }
             addMergedObject(schemaName, value.type)
           })
         }
@@ -155,7 +160,14 @@ class RemoteDirective extends SchemaRemoteVisitor {
           addMergedObject(schemaName, types[i])
         }
       } else {
+        if (!otherTypes[schemaName][obj.name]) {
+          invariant(!obj.description || !obj.description.startsWith('__'),
+            `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
+          // console.log('addObj2:',schemaName,obj.name)
+          otherTypes[schemaName][obj.name] = obj
+          obj.description = '__' + (obj.description ? obj.description : '')
 
+        }
       }
     }
 
