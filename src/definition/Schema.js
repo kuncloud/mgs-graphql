@@ -1,6 +1,6 @@
 // @flow
 import _ from 'lodash'
-import type { LinkedFieldConfig, QueryConfig, MutationConfig, RemoteLinkConfig,
+import type { LinkedFieldConfig, QueryConfig, MutationConfig,
   FieldType, SchemaOptionConfig, HasOneConfig, BelongsToConfig, HasManyConfig,
   BelongsToManyConfig, AssociationConfig} from '../Definition'
 
@@ -15,7 +15,8 @@ export default class Schema<T> {
     queries:{[id:string]: QueryConfig<T>},
     mutations:{[id:string]: MutationConfig<T>},
     methods:{[id:string]: any},
-    statics:{[id:string]: any}
+    statics:{[id:string]: any},
+    description:string
   }
 
   // remoteLinkConfig:RemoteLinkConfig
@@ -35,7 +36,8 @@ export default class Schema<T> {
       queries: {},
       mutations: {},
       methods: {},
-      statics: {}
+      statics: {},
+      description: ''
     }
     // this.remoteLinkConfig = {}
   }
@@ -48,7 +50,6 @@ export default class Schema<T> {
     this.config.fields = Object.assign(this.config.fields, fields)
     return this
   }
-
 
   /**
    * Add the model link fields, and each link generate a GraphQL field but no corresponding database column.

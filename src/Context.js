@@ -188,10 +188,9 @@ export default class Context {
     if (schema.name.length >= 1 && (schema.name[0] === '_' || schema.name.endsWith('Id'))) {
       throw new Error(`Schema "${schema.name}" must not begin with "_" or end with "Id", which is reserved by MGS`)
     }
-    if(!_.isEmpty(schema.description) && schema.description.startsWith('__')){
+    if (!schema.config.description && schema.config.description.startsWith('__')) {
       throw new Error(`Schema "${schema.name}" description must not begin with "__"  which is reserved by MGS`)
     }
-
 
     this.schemas[schema.name] = schema
 

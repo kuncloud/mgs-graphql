@@ -1,10 +1,18 @@
 // @flow
-import {isOutputType, GraphQLNonNull, getNamedType,GraphQLSchema,GraphQLUnionType, GraphQLInterfaceType,GraphQLObjectType, GraphQLList} from 'graphql'
+import {
+  isOutputType,
+  GraphQLNonNull,
+  GraphQLSchema,
+  GraphQLUnionType,
+  GraphQLInterfaceType,
+  GraphQLObjectType,
+  GraphQLList
+} from 'graphql'
 import _ from 'lodash'
 import {
   mergeSchemas
 } from 'graphql-tools'
-import type {GraphQLField, GraphQLNamedType} from 'graphql'
+import type {GraphQLField, GraphQLOutputType} from 'graphql'
 import type {IResolversParameter} from 'graphql-tools'
 import {
   SchemaVisitor,
@@ -13,11 +21,11 @@ import {
 } from 'graphql-tools/dist/schemaVisitor'
 import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
-let otherTypes:{
+let otherTypes: {
   [key:string]:{
-    [key:string]:GraphQLObjectType
+    [key:string]:GraphQLObjectType|GraphQLInterfaceType
   }
-} = []
+} = {}
 class SchemaRemoteVisitor extends SchemaVisitor {
   static visitTheSchema (schema: GraphQLSchema,
                         context: {
@@ -26,12 +34,13 @@ class SchemaRemoteVisitor extends SchemaVisitor {
     function visitorSelector (type: VisitableSchemaType,
                              methodName: string): Array<SchemaRemoteVisitor> {
       const visitors = []
-      if (methodName !== 'visitFieldDefinition') { return visitors }
+      if (methodName !== 'visitFieldDefinition') {
+        return visitors
+      }
 
-      const isStub = (type:VisitableSchemaType) => {
+      const isStub = (type: VisitableSchemaType) => {
         return (type instanceof GraphQLObjectType) &&
-          type.name.startsWith(context.prefix) &&
-          !_.isEmpty(type.description) &&
+          type.name.startsWith(context.prefix) && !_.isEmpty(type.description) &&
           type.description.startsWith('{') &&
           type.description.endsWith('}')
       }
@@ -46,7 +55,7 @@ class SchemaRemoteVisitor extends SchemaVisitor {
       } else if (type.type instanceof GraphQLNonNull) {
         if (isStub(type.type.ofType)) {
           visitedType = type
-          remoteType  = type.type.ofType
+          remoteType = type.type.ofType
         }
       } else if (isStub(type.type)) {
         visitedType = type
@@ -98,56 +107,56 @@ class SchemaRemoteVisitor extends SchemaVisitor {
   }
 }
 
-
-
-
 class RemoteDirective extends SchemaRemoteVisitor {
   visitFieldDefinition (field: GraphQLField<any, any>) {
     invariant(!_.isEmpty(this.args), 'Must provide args')
 
-    const getTargetSchema = (modeName: string, srcSchemas: {[key:string]:GraphQLSchema}): ?{schemaName:string,obj:GraphQLNamedType} => {
-      if (_.isEmpty(srcSchemas)) { return }
+    const getTargetSchema = (modeName: string, srcSchemas: {[key:string]:GraphQLSchema}): ?{schemaName:string, obj:GraphQLObjectType} => {
+      if (_.isEmpty(srcSchemas)) {
+        return
+      }
 
-      let found = undefined
-      _.forOwn(srcSchemas,(target,key) => {
+      let found
+      _.forOwn(srcSchemas, (target, key) => {
         if (target && target.getType(modeName)) {
           found = {
-            obj:target.getType(modeName),
-            schemaName:key
+            obj: target.getType(modeName),
+            schemaName: key
           }
-          if(found.obj && ( _.isEmpty(found.obj.description) || !found.obj.description.startsWith('__') )  )
+          if (found.obj && (_.isEmpty(found.obj.description) || !found.obj.description.startsWith('__'))) {
             return false
+          }
         }
       })
 
       return found
     }
 
-    const addMergedObject = (schemaName:string,obj:GraphQLNamedType) => {
-      if(obj instanceof GraphQLList){
-        addMergedObject(schemaName,obj.ofType)
-      }else if(obj instanceof GraphQLNonNull){
-        addMergedObject(schemaName,obj.ofType)
-      }else if(obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType){
+    const addMergedObject = (schemaName: string, obj: GraphQLOutputType) => {
+      if (obj instanceof GraphQLList) {
+        addMergedObject(schemaName, obj.ofType)
+      } else if (obj instanceof GraphQLNonNull) {
+        addMergedObject(schemaName, obj.ofType)
+      } else if (obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType) {
         // console.log('addObj:',schemaName,obj.name)
-        if(!otherTypes[schemaName][obj.name]){
-          invariant(!obj.description || !obj.description.startsWith('__'),`graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description}`)
+        if (!otherTypes[schemaName][obj.name]) {
+          invariant(!obj.description || !obj.description.startsWith('__'),
+            `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
           otherTypes[schemaName][obj.name] = obj
-          obj.description = '__' + (obj.description ? '' : obj.description)
+          obj.description = '__' + (obj.description ? obj.description : '')
           const fields = obj.getFields()
-          _.forOwn(fields,(value,key)=>{
-            addMergedObject(schemaName,value.type)
+          _.forOwn(fields, (value, key) => {
+            addMergedObject(schemaName, value.type)
           })
         }
-      }else if( obj instanceof  GraphQLUnionType ){
+      } else if (obj instanceof GraphQLUnionType) {
         const types = obj.getTypes()
-        for(i=0;i<types.length;++i){
-          addMergedObject(types[i])
+        for (let i = 0; i < types.length; ++i) {
+          addMergedObject(schemaName, types[i])
         }
-      }else {
+      } else {
 
       }
-
     }
 
     const gqlObj = getTargetSchema(this.args.target, this.context.srcSchema)
@@ -156,7 +165,7 @@ class RemoteDirective extends SchemaRemoteVisitor {
       // console.log('match:',gqlObj.schemaName,gqlObj.obj.name)
       addMergedObject(gqlObj.schemaName, gqlObj.obj)
 
-      invariant(otherTypes[gqlObj.schemaName][gqlObj.obj.name] == gqlObj.obj,`Must same output graphql object:${gqlObj.obj.name}`)
+      invariant(otherTypes[gqlObj.schemaName][gqlObj.obj.name] === gqlObj.obj, `Must same output graphql object:${gqlObj.obj.name}`)
 
       if (field.type instanceof GraphQLList) {
         field.type = new GraphQLList(gqlObj.obj)
@@ -168,8 +177,10 @@ class RemoteDirective extends SchemaRemoteVisitor {
 }
 
 function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: {[key:string]:GraphQLSchema}, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
-  if (_.isEmpty(schemaMerged)) { return schema }
-  otherTypes = _.mapValues(schemaMerged,(value)=>{
+  if (_.isEmpty(schemaMerged)) {
+    return schema
+  }
+  otherTypes = _.mapValues(schemaMerged, (value) => {
     return {}
   })
 
@@ -178,19 +189,20 @@ function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: {[key:string]:Gra
     srcSchema: schemaMerged
   })
 
-  _.forOwn(otherTypes,(value,key)=>{
-    if(_.isEmpty(value))
+  _.forOwn(otherTypes, (value, key) => {
+    if (_.isEmpty(value)) {
       throw new Error(`merged schema ${key}:none of schema is merging`)
+    }
   })
 
   let objMap = {}
-  _.forOwn(otherTypes,(objs,schemaName)=>{
-    _.forOwn(objs,(obj,name)=>{
+  _.forOwn(otherTypes, (objs, schemaName) => {
+    _.forOwn(objs, (obj, name) => {
       objMap[name] = obj
     })
   })
 
-  return mergeSchemas({schemas: [schema, (_.map(objMap,(value)=>value)) ], resolvers})
+  return mergeSchemas({schemas: [schema, (_.map(objMap, (value) => value))], resolvers})
 }
 
 module.exports = {

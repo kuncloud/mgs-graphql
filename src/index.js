@@ -109,7 +109,7 @@ const SimpleGraphQL = {
       }
     })
 
-    const schemaMerged =  context.remoteInfo && context.remoteInfo['schema']
+    const schemaMerged = context.remoteInfo && context.remoteInfo['schema']
     // if (!_.isEmpty(context.remoteInfo) && !_.isEmpty(context.remoteInfo['schema'])) {
     //   _.forOwn(context.remoteInfo['schema'], (value, key) => {
     //     schemaMerged.push(value)
