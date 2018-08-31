@@ -1,5 +1,6 @@
 // @flow
 import {HttpLink} from 'apollo-link-http'
+import {setContext} from 'apollo-link-context'
 import {GraphQLSchema} from 'graphql'
 import type {GraphQLResolveInfo} from 'graphql'
 import {makeRemoteExecutableSchema} from 'graphql-tools'
@@ -37,9 +38,11 @@ function remoteSchemasFromFile (endPoint: string, gqlFile: string): GraphQLSchem
   const gql: string = fs.readFileSync(gqlFile, {flag: 'r+', encoding: 'utf-8'})
   // console.log(gql)
   const link: HttpLink = new HttpLink({uri: endPoint, fetch})
+  const withToken: HttpLink = setContext((req, {graphqlContext}) => ({headers: {'pre-headers': JSON.stringify(graphqlContext)}}))
+
   const schema: GraphQLSchema = makeRemoteExecutableSchema({
     schema: gql,
-    link: link
+    link: withToken.concat(link)
   })
   // assertValidSchema(schema)
   return schema
