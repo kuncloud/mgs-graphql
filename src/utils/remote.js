@@ -96,12 +96,11 @@ export type RemoteConfig = {
 //     }
 //   }
 // }
-export function buildBindings (cfg: RemoteConfig, {headerKeys = []}): {[key:string]:any} {
+export function buildBindings (cfg: RemoteConfig, ext: Object): {[key:string]:any} {
   if (_.isEmpty(cfg)) { return {} }
 
-  const binding = {
-
-  }
+  const binding = {}
+  const headerKeys = _.get(ext, 'headerKeys', [])
 
   _.forOwn(cfg, (value, key) => {
     if (key.startsWith('__')) { return true }
