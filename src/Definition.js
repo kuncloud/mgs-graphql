@@ -366,5 +366,6 @@ export type BuildOptionConfig = {
                 context:any,
                 info:GraphQLResolveInfo,
                 sgContext:SGContext) => any}>
-  }
+  },
+  headerKeys?: [String]
 }
