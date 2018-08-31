@@ -9,7 +9,6 @@ import path from 'path'
 import fs from 'fs'
 import * as fsHelper from './fileHelper'
 import {Binding} from 'graphql-binding'
-
 import _ from 'lodash'
 
 const protocol: string = 'http'
@@ -26,7 +25,7 @@ const protocol: string = 'http'
 //   return schema
 // }
 
-function remoteSchemasFromFile (endPoint: string, gqlFile: string): GraphQLSchema {
+function remoteSchemasFromFile (endPoint: string, gqlFile: string, headerKeys = []): GraphQLSchema {
   console.log('remoteSchemasFromFile call:', endPoint, gqlFile, __dirname)
   if (!gqlFile.endsWith('.gql')) { throw new Error('Must postfix with .gql') }
 
@@ -38,7 +37,18 @@ function remoteSchemasFromFile (endPoint: string, gqlFile: string): GraphQLSchem
   const gql: string = fs.readFileSync(gqlFile, {flag: 'r+', encoding: 'utf-8'})
   // console.log(gql)
   const link: HttpLink = new HttpLink({uri: endPoint, fetch})
-  const withToken: HttpLink = setContext((req, {graphqlContext}) => ({headers: {'pre-headers': JSON.stringify(graphqlContext)}}))
+  const withToken: HttpLink = setContext(
+    (req, {graphqlContext}) => {
+      const headers = {}
+      if (graphqlContext) {
+        _.assign(headers, graphqlContext.headers)
+        headerKeys.map(key => _.set(headers, key, _.get(graphqlContext.headers, key, '')))
+      }
+      return {
+        headers
+      }
+    }
+  )
 
   const schema: GraphQLSchema = makeRemoteExecutableSchema({
     schema: gql,
@@ -86,7 +96,7 @@ export type RemoteConfig = {
 //     }
 //   }
 // }
-export function buildBindings (cfg: RemoteConfig): {[key:string]:any} {
+export function buildBindings (cfg: RemoteConfig, {headerKeys = []}): {[key:string]:any} {
   if (_.isEmpty(cfg)) { return {} }
 
   const binding = {
@@ -97,7 +107,7 @@ export function buildBindings (cfg: RemoteConfig): {[key:string]:any} {
     if (key.startsWith('__')) { return true }
 
     // console.log('binding cfg:',key,value)
-    const schema = remoteSchemasFromFile(endPoint(value.uri), value.gql.path)
+    const schema = remoteSchemasFromFile(endPoint(value.uri), value.gql.path, headerKeys)
     // const schema = await remoteSchemasFromURI(endPoint(value.uri))
     binding['schema'] = {
       ...binding['schema'],

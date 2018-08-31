@@ -95,7 +95,7 @@ export default class Context {
       Mutation: {}
     }
 
-    this.remoteInfo = buildBindings(remoteCfg)
+    this.remoteInfo = buildBindings(remoteCfg, {headerKeys: options.headerKeys})
     this.remotePrefix = '_remote_'
   }
 
