@@ -212,7 +212,8 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
         },
         options: {
           $type: {
-            where: Type.GraphQLScalarTypes.Json
+            where: Type.GraphQLScalarTypes.Json,
+            group: String
           },
           description: 'Sequelize.findAll(option)'
         },
@@ -298,16 +299,25 @@ export default function pluralQuery (schema:Schema<any>, options:any):void {
           }
         }
 
-        if (options && !_.isEmpty(options.where)) {
-          const where = cvtGId('where', options.where)
-          // console.log('dd', where)
-          const cond = replaceOp(where)
-          if (cond) {
-            // console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
-            if (!condition[Op.and]) {
-              condition[Op.and] = []
+        if (options) {
+          if (!_.isEmpty(options.where)) {
+            const where = cvtGId('where', options.where)
+            // console.log('dd', where)
+            const cond = replaceOp(where)
+            if (cond) {
+              // console.log('dd',cond,cond[Op.or][0].id,cond[Op.or][1].id[Op.gt])
+              if (!condition[Op.and]) {
+                condition[Op.and] = []
+              }
+              condition[Op.and].push(cond)
             }
-            condition[Op.and].push(cond)
+          }
+
+          if (!_.isEmpty(options.group)) {
+            args = {
+              ...args,
+              group: options.group
+            }
           }
         }
 

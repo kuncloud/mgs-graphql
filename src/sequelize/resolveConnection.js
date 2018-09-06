@@ -7,6 +7,7 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
   last?: number,
   include?:Array<any>,
   condition?:any,
+  group?: any,
   sort?: Array<{field: string, order: "ASC"|"DESC"}>
 }):Promise<{
   pageInfo: {
@@ -21,7 +22,7 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
   }>,
   count: number
 }> {
-  let {after, first = 100, before, last, include = [], condition = {}, sort = [{
+  let {after, first = 100, before, last, group, include = [], condition = {}, sort = [{
     field: 'id',
     order: 'ASC'
   }]} = args
@@ -44,13 +45,21 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
   }
   const offset = Math.max(after != null ? parseInt(after) : 0, 0)
 
-  const result = await dbModel.findAll({
+  let sequelizeOptions = {
     include: include,
     where: condition,
     order: sort.map(s => [s.field, s.order]),
     limit: first,
     offset: offset
-  })
+  }
+  if (group) {
+    sequelizeOptions = {
+      ...sequelizeOptions,
+      group
+    }
+  }
+
+  const result = await dbModel.findAll(sequelizeOptions)
   // console.log('fr:',result)
 
   let index = 0
