@@ -1,10 +1,10 @@
 // @flow
 import Sequelize from 'sequelize'
-// import * as graphql from 'graphql'
 import * as relay from 'graphql-relay'
 import _ from 'lodash'
 import {GraphQLSchema, GraphQLInterfaceType, GraphQLObjectType, GraphQLNonNull, GraphQLFloat, GraphQLID, GraphQLString} from 'graphql'
 import type {GraphQLResolveInfo} from 'graphql'
+import camelcase from 'camelcase'
 
 import Schema from './definition/Schema'
 import Service from './definition/Service'
@@ -14,7 +14,6 @@ import Transformer from './transformer'
 import type {IResolversParameter, MergeInfo} from 'graphql-tools'
 
 import SequelizeContext from './sequelize/SequelizeContext'
-
 import type {SGContext, LinkedFieldType, ArgsType, BuildOptionConfig} from './Definition'
 import type {RemoteConfig} from './utils/remote'
 import {buildBindings} from './utils/remote'
@@ -100,7 +99,6 @@ export default class Context {
   }
 
   getSGContext () {
-    // console.log('bindings:',this.remoteInfo['binding'])
     return {
       sequelize: this.dbContext.sequelize,
       models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
@@ -123,7 +121,7 @@ export default class Context {
     if (!this.remoteInfo['schema']) { return }
 
     let target
-    _.forOwn(this.remoteInfo['schema'], (value, key) => {
+    _.forOwn(this.remoteInfo['schema'], (value) => {
       if (value && value.getType(modeName)) {
         target = value
         return false
@@ -134,7 +132,6 @@ export default class Context {
   }
 
   addRemoteResolver (schemaName:string, fieldName:string, linkId:string, target:string) {
-    // console.log('addRemoteResolver1:',schemaName,fieldName)
     if (!this.resolvers[schemaName]) { this.resolvers[schemaName] = {} }
 
     const self = this
@@ -285,8 +282,7 @@ export default class Context {
         fields: {
           'id': {
             type: GraphQLString,
-            resolve: (root) => {
-              // console.log('fake id',root)
+            resolve: () => {
               return 'MGS only fake ,not supported'
             }
           }
@@ -471,12 +467,13 @@ export default class Context {
 
   buildModelAssociations (): void {
     const self = this
-    _.forOwn(self.schemas, (schema, schemaName) => {
+    _.forOwn(self.schemas, (schema) => {
       _.forOwn(schema.config.associations.hasMany, (config, key) => {
         let d = {
           ...config,
           as: key,
           foreignKey: config.foreignKey || config.foreignField + 'Id',
+          foreignField: config.foreignField || camelcase(config.foreignKey),
           through: undefined
         }
         self.dbModel(schema.name).hasMany(self.dbModel(config.target), d)
@@ -487,6 +484,7 @@ export default class Context {
           ...config,
           as: key,
           foreignKey: config.foreignField + 'Id',
+          foreignField: config.foreignField || camelcase(config.foreignKey),
           through: config.through && {...config.through, model: self.dbModel(config.through.model)}
         })
       })
@@ -495,7 +493,8 @@ export default class Context {
         self.dbModel(schema.name).hasOne(self.dbModel(config.target), {
           ...config,
           as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id'
+          foreignKey: config.foreignKey || config.foreignField + 'Id',
+          foreignField: config.foreignField || camelcase(config.foreignKey)
         })
       })
 
@@ -503,7 +502,8 @@ export default class Context {
         self.dbModel(schema.name).belongsTo(self.dbModel(config.target), {
           ...config,
           as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id'
+          foreignKey: config.foreignKey || config.foreignField + 'Id',
+          foreignField: config.foreignField || camelcase(config.foreignKey)
         })
       })
     })
