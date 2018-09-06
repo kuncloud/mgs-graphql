@@ -472,8 +472,10 @@ export default class Context {
         let d = {
           ...config,
           as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id',
-          foreignField: config.foreignField || camelcase(config.foreignKey),
+          foreignKey: {
+            name: camelcase(config.foreignKey || config.foreignField + 'Id'),
+            field: config.foreignKey || config.foreignField + 'Id'
+          },
           through: undefined
         }
         self.dbModel(schema.name).hasMany(self.dbModel(config.target), d)
@@ -483,8 +485,7 @@ export default class Context {
         self.dbModel(schema.name).belongsToMany(self.dbModel(config.target), {
           ...config,
           as: key,
-          foreignKey: config.foreignField + 'Id',
-          foreignField: config.foreignField || camelcase(config.foreignKey),
+          foreignKey: config.foreignKey || config.foreignField + 'Id',
           through: config.through && {...config.through, model: self.dbModel(config.through.model)}
         })
       })
@@ -493,8 +494,10 @@ export default class Context {
         self.dbModel(schema.name).hasOne(self.dbModel(config.target), {
           ...config,
           as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id',
-          foreignField: config.foreignField || camelcase(config.foreignKey)
+          foreignKey: {
+            name: camelcase(config.foreignKey || config.foreignField + 'Id'),
+            field: config.foreignKey || config.foreignField + 'Id'
+          }
         })
       })
 
@@ -502,8 +505,7 @@ export default class Context {
         self.dbModel(schema.name).belongsTo(self.dbModel(config.target), {
           ...config,
           as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id',
-          foreignField: config.foreignField || camelcase(config.foreignKey)
+          foreignKey: config.foreignKey || config.foreignField + 'Id'
         })
       })
     })
