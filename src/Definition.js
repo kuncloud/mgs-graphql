@@ -364,8 +364,8 @@ export type AssociationConfig<T> ={
 export type BuildOptionConfig = {
   hooks?:Array<{
     description?: string,
-    filter: (action:{type:'field'|'query'|'mutation', config:any})=>boolean,
-    hook: (action:{type:'field'|'query'|'mutation', config:any},
+    filter: (action:{type:'field'|'query'|'mutation'|'subscription', config:any})=>boolean,
+    hook: (action:{type:'field'|'query'|'mutation'|'subscription', config:any},
            invokeInfo:{source?:any, args:any, context:any, info:GraphQLResolveInfo, sgContext:SGContext},
            next:()=>any)=>any
   }>,
