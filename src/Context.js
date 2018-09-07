@@ -72,6 +72,8 @@ export default class Context {
 
   mutations: {[id:string]:MutationConfig}
 
+  subscriptions: {[id:string]:SubscriptionConfig}
+
   connectionDefinitions: {[id:string]:{connectionType:GraphQLObjectType, edgeType:GraphQLObjectType}}
 
   resolvers: IResolversParameter
