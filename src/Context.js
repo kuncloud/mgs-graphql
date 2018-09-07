@@ -40,6 +40,19 @@ export type MutationConfig ={
                        sgContext: SGContext) => any
 }
 
+export type SubscriptionConfig ={
+  name:string,
+  $type:LinkedFieldType,
+  description?:string,
+  args?:ArgsType,
+  subscribe: any,
+  resolve: (root: any,
+            args: {[argName: string]: any},
+            context: any,
+            info: GraphQLResolveInfo,
+            sgContext: SGContext) => any
+}
+
 export default class Context {
   dbContext: SequelizeContext
 
@@ -77,6 +90,7 @@ export default class Context {
     this.graphQLObjectTypes = {}
     this.queries = {}
     this.mutations = {}
+    this.subscriptions = {}
 
     this.connectionDefinitions = {}
 
@@ -229,6 +243,13 @@ export default class Context {
       this.addMutation(value)
     })
 
+    _.forOwn(schema.config.subscriptions, (value, key) => {
+      if (!value['name']) {
+        value['name'] = key
+      }
+      this.addSubscription(value)
+    })
+
     this.dbModel(schema.name)
   }
 
@@ -272,6 +293,13 @@ export default class Context {
       throw new Error('Mutation ' + config.name + ' already define.')
     }
     this.mutations[config.name] = config
+  }
+
+  addSubscription (config: SubscriptionConfig) {
+    if (this.subscriptions[config.name]) {
+      throw new Error('Subscription ' + config.name + ' already define.')
+    }
+    this.subscriptions[config.name] = config
   }
 
   remoteGraphQLObjectType (name: string): GraphQLObjectType {
@@ -375,6 +403,35 @@ export default class Context {
     },
       () => {
         return config.resolve(args, context, info, self.getSGContext())
+      }
+    )
+  }
+
+  wrapSubscriptionResolve (config: SubscriptionConfig): any {
+    const self = this
+    let hookFun = (action, invokeInfo, next) => next()
+
+    if (this.options.hooks != null) {
+      this.options.hooks.reverse().forEach(hook => {
+        if (!hook.filter || hook.filter({type: 'subscription', config})) {
+          const preHook = hookFun
+          hookFun = (action, invokeInfo, next) => hook.hook(action, invokeInfo, preHook.bind(null, action, invokeInfo, next))
+        }
+      })
+    }
+
+    return (source, args, context, info) => hookFun({
+      type: 'subscription',
+      config: config
+    }, {
+      source: source,
+      args: args,
+      context: context,
+      info: info,
+      sgContext: self.getSGContext()
+    },
+      () => {
+        return config.resolve(source, args, context, info, self.getSGContext())
       }
     )
   }

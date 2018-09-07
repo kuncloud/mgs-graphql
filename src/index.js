@@ -110,11 +110,6 @@ const SimpleGraphQL = {
     })
 
     const schemaMerged = context.remoteInfo && context.remoteInfo['schema']
-    // if (!_.isEmpty(context.remoteInfo) && !_.isEmpty(context.remoteInfo['schema'])) {
-    //   _.forOwn(context.remoteInfo['schema'], (value, key) => {
-    //     schemaMerged.push(value)
-    //   })
-    // }
 
     const createNodeQuery = (NodeType, viewerResolve) => {
       return {
@@ -228,37 +223,6 @@ const SimpleGraphQL = {
       }
 
       finalQueries['node'] = createNodeQuery(context.nodeInterface, finalQueries['viewer'] ? finalQueries['viewer'].resolve : null)
-      // finalQueries['node'] = {
-      //   name: 'node',
-      //   description: 'Fetches an object given its ID',
-      //   type: context.nodeInterface,
-      //   args: {
-      //     id: {
-      //       type: new GraphQLNonNull(GraphQLID),
-      //       description: 'The ID of an object'
-      //     }
-      //   },
-      //   resolve: context.wrapQueryResolve({
-      //     name: 'node',
-      //     $type: context.nodeInterface,
-      //     resolve: async function (args, context, info, sgContext, invoker) {
-      //
-      //       console.log('ffffffff22')
-      //       const id = relay.fromGlobalId(args.id)
-      //       if (id.type === 'Viewer') {
-      //         if (finalQueries['viewer'] && finalQueries['viewer'].resolve) {
-      //           return finalQueries['viewer'].resolve(null, args, context, info)
-      //         }
-      //       }
-      //       if (!sgContext.models[id.type]) return null
-      //       const record = await sgContext.models[id.type].findOne({where: {id: id.id}})
-      //       if (record) {
-      //         record._type = id.type
-      //       }
-      //       return record
-      //     }
-      //   })
-      // }
     }
 
     const rootQuery = new GraphQLObjectType({
@@ -267,15 +231,6 @@ const SimpleGraphQL = {
         return finalQueries
       }
     })
-
-    //
-    // finalQueries['relay'] = {
-    //   description: 'Hack to workaround https://github.com/facebook/relay/issues/112 re-exposing the root query object',
-    //   type: new GraphQLNonNull(rootQuery),
-    //   resolve: () => {
-    //     return {}
-    //   }
-    // }
 
     const rootMutation = new GraphQLObjectType({
       name: 'Mutation',
@@ -320,9 +275,39 @@ const SimpleGraphQL = {
       }
     })
 
+    const rootSubscription = _.isEmpty(context.subscriptions) ? null : new GraphQLObjectType({
+      name: 'Subscription',
+      fields: () => {
+        const subscriptions = {}
+        _.forOwn(context.subscriptions, (value, key) => {
+          const fieldConfig = Transformer.toGraphQLFieldConfig(
+            key,
+            'Payload',
+            value.$type,
+            context)
+
+          subscriptions[key] = {
+            type: fieldConfig.type,
+            resolve: context.wrapSubscriptionResolve(value),
+            description: value.description,
+            subscribe: value.subscribe
+          }
+          if (value.args || fieldConfig.args) {
+            subscriptions[key].args = Transformer.toGraphQLInputFieldMap(
+              StringHelper.toInitialUpperCase(key), {
+                ...fieldConfig.args,
+                ...value.args
+              })
+          }
+        })
+        return subscriptions
+      }
+    })
+
     let schema = new GraphQLSchema({
       query: rootQuery,
-      mutation: rootMutation
+      mutation: rootMutation,
+      subscription: rootSubscription
     })
 
     schema = mergeAllSchemas(

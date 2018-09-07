@@ -106,6 +106,22 @@ export type MutationConfig<T> ={
 }
 
 /**
+ * @public
+ */
+export type SubscriptionConfig<T> ={
+  $type:LinkedFieldType,
+  description?:string,
+  config?:T,
+  args?:ArgsType,
+  subscribe: any,
+  resolve: (root: any,
+            args:{[string]: any},
+            context:any,
+            info:GraphQLResolveInfo,
+            sgContext:SGContext) => any
+}
+
+/**
  * ValidateConfig, for {@link https://github.com/chriso/validator.js|validator.js}
  */
 type ValidateConfig = {

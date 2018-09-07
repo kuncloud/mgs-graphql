@@ -1,6 +1,6 @@
 // @flow
 import _ from 'lodash'
-import type { LinkedFieldConfig, QueryConfig, MutationConfig,
+import type { LinkedFieldConfig, QueryConfig, MutationConfig, SubscriptionConfig,
   FieldType, SchemaOptionConfig, HasOneConfig, BelongsToConfig, HasManyConfig,
   BelongsToManyConfig, AssociationConfig} from '../Definition'
 
@@ -14,6 +14,7 @@ export default class Schema<T> {
     options:SchemaOptionConfig,
     queries:{[id:string]: QueryConfig<T>},
     mutations:{[id:string]: MutationConfig<T>},
+    subscriptions:{[id:string]: SubscriptionConfig<T>},
     methods:{[id:string]: any},
     statics:{[id:string]: any},
     description:string
@@ -35,6 +36,7 @@ export default class Schema<T> {
       options: options,
       queries: {},
       mutations: {},
+      subscriptions: {},
       methods: {},
       statics: {},
       description: ''
@@ -78,6 +80,15 @@ export default class Schema<T> {
   mutations (mutations:{[string]:MutationConfig<T>}):Schema<T> {
     // TODO duplicate check
     this.config.mutations = Object.assign(this.config.mutations, mutations)
+    return this
+  }
+
+  /**
+   * Add the GraphQL subscription methods.
+   */
+  subscriptions (subscriptions:{[string]:SubscriptionConfig<T>}):Schema<T> {
+    // TODO duplicate check
+    this.config.subscriptions = Object.assign(this.config.subscriptions, subscriptions)
     return this
   }
 
