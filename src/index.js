@@ -221,9 +221,8 @@ const SimpleGraphQL = {
           description: viewerConfig.description
         }
       }
-
-      // finalQueries['node'] = createNodeQuery(context.nodeInterface, finalQueries['viewer'] ? finalQueries['viewer'].resolve : null)
     }
+    finalQueries['node'] = createNodeQuery(context.nodeInterface, finalQueries['viewer'] ? finalQueries['viewer'].resolve : null)
 
     const rootQuery = new GraphQLObjectType({
       name: 'Query',
