@@ -1,10 +1,10 @@
 // @flow
 import Sequelize from 'sequelize'
-// import * as graphql from 'graphql'
 import * as relay from 'graphql-relay'
 import _ from 'lodash'
 import {GraphQLSchema, GraphQLInterfaceType, GraphQLObjectType, GraphQLNonNull, GraphQLFloat, GraphQLID, GraphQLString} from 'graphql'
 import type {GraphQLResolveInfo} from 'graphql'
+import camelcase from 'camelcase'
 
 import Schema from './definition/Schema'
 import Service from './definition/Service'
@@ -14,7 +14,6 @@ import Transformer from './transformer'
 import type {IResolversParameter, MergeInfo} from 'graphql-tools'
 
 import SequelizeContext from './sequelize/SequelizeContext'
-
 import type {SGContext, LinkedFieldType, ArgsType, BuildOptionConfig} from './Definition'
 import type {RemoteConfig} from './utils/remote'
 import {buildBindings} from './utils/remote'
@@ -41,6 +40,19 @@ export type MutationConfig ={
                        sgContext: SGContext) => any
 }
 
+export type SubscriptionConfig ={
+  name:string,
+  $type:LinkedFieldType,
+  description?:string,
+  args?:ArgsType,
+  subscribe: any,
+  resolve: (root: any,
+            args: {[argName: string]: any},
+            context: any,
+            info: GraphQLResolveInfo,
+            sgContext: SGContext) => any
+}
+
 export default class Context {
   dbContext: SequelizeContext
 
@@ -60,6 +72,8 @@ export default class Context {
 
   mutations: {[id:string]:MutationConfig}
 
+  subscriptions: {[id:string]:SubscriptionConfig}
+
   connectionDefinitions: {[id:string]:{connectionType:GraphQLObjectType, edgeType:GraphQLObjectType}}
 
   resolvers: IResolversParameter
@@ -78,6 +92,7 @@ export default class Context {
     this.graphQLObjectTypes = {}
     this.queries = {}
     this.mutations = {}
+    this.subscriptions = {}
 
     this.connectionDefinitions = {}
 
@@ -95,12 +110,11 @@ export default class Context {
       Mutation: {}
     }
 
-    this.remoteInfo = buildBindings(remoteCfg)
+    this.remoteInfo = buildBindings(remoteCfg, {headerKeys: options.headerKeys})
     this.remotePrefix = '_remote_'
   }
 
   getSGContext () {
-    // console.log('bindings:',this.remoteInfo['binding'])
     return {
       sequelize: this.dbContext.sequelize,
       models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
@@ -123,7 +137,7 @@ export default class Context {
     if (!this.remoteInfo['schema']) { return }
 
     let target
-    _.forOwn(this.remoteInfo['schema'], (value, key) => {
+    _.forOwn(this.remoteInfo['schema'], (value) => {
       if (value && value.getType(modeName)) {
         target = value
         return false
@@ -134,7 +148,6 @@ export default class Context {
   }
 
   addRemoteResolver (schemaName:string, fieldName:string, linkId:string, target:string) {
-    // console.log('addRemoteResolver1:',schemaName,fieldName)
     if (!this.resolvers[schemaName]) { this.resolvers[schemaName] = {} }
 
     const self = this
@@ -232,6 +245,13 @@ export default class Context {
       this.addMutation(value)
     })
 
+    _.forOwn(schema.config.subscriptions, (value, key) => {
+      if (!value['name']) {
+        value['name'] = key
+      }
+      this.addSubscription(value)
+    })
+
     this.dbModel(schema.name)
   }
 
@@ -277,6 +297,13 @@ export default class Context {
     this.mutations[config.name] = config
   }
 
+  addSubscription (config: SubscriptionConfig) {
+    if (this.subscriptions[config.name]) {
+      throw new Error('Subscription ' + config.name + ' already define.')
+    }
+    this.subscriptions[config.name] = config
+  }
+
   remoteGraphQLObjectType (name: string): GraphQLObjectType {
     const typeName = this.remotePrefix + name
     if (!this.graphQLObjectTypes[typeName]) {
@@ -285,8 +312,7 @@ export default class Context {
         fields: {
           'id': {
             type: GraphQLString,
-            resolve: (root) => {
-              // console.log('fake id',root)
+            resolve: () => {
               return 'MGS only fake ,not supported'
             }
           }
@@ -383,6 +409,35 @@ export default class Context {
     )
   }
 
+  wrapSubscriptionResolve (config: SubscriptionConfig): any {
+    const self = this
+    let hookFun = (action, invokeInfo, next) => next()
+
+    if (this.options.hooks != null) {
+      this.options.hooks.reverse().forEach(hook => {
+        if (!hook.filter || hook.filter({type: 'subscription', config})) {
+          const preHook = hookFun
+          hookFun = (action, invokeInfo, next) => hook.hook(action, invokeInfo, preHook.bind(null, action, invokeInfo, next))
+        }
+      })
+    }
+
+    return (source, args, context, info) => hookFun({
+      type: 'subscription',
+      config: config
+    }, {
+      source: source,
+      args: args,
+      context: context,
+      info: info,
+      sgContext: self.getSGContext()
+    },
+      () => {
+        return config.resolve(source, args, context, info, self.getSGContext())
+      }
+    )
+  }
+
   wrapFieldResolve (config: {
     name:string,
     $type:LinkedFieldType,
@@ -471,12 +526,15 @@ export default class Context {
 
   buildModelAssociations (): void {
     const self = this
-    _.forOwn(self.schemas, (schema, schemaName) => {
+    _.forOwn(self.schemas, (schema) => {
       _.forOwn(schema.config.associations.hasMany, (config, key) => {
         let d = {
           ...config,
           as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id',
+          foreignKey: {
+            name: camelcase(config.foreignKey || config.foreignField + 'Id'),
+            field: config.foreignKey || config.foreignField + 'Id'
+          },
           through: undefined
         }
         self.dbModel(schema.name).hasMany(self.dbModel(config.target), d)
@@ -486,7 +544,7 @@ export default class Context {
         self.dbModel(schema.name).belongsToMany(self.dbModel(config.target), {
           ...config,
           as: key,
-          foreignKey: config.foreignField + 'Id',
+          foreignKey: config.foreignKey || config.foreignField + 'Id',
           through: config.through && {...config.through, model: self.dbModel(config.through.model)}
         })
       })
@@ -495,7 +553,10 @@ export default class Context {
         self.dbModel(schema.name).hasOne(self.dbModel(config.target), {
           ...config,
           as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id'
+          foreignKey: {
+            name: camelcase(config.foreignKey || config.foreignField + 'Id'),
+            field: config.foreignKey || config.foreignField + 'Id'
+          }
         })
       })
 
