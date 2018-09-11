@@ -226,8 +226,10 @@ const SimpleGraphQL = {
           description: viewerConfig.description
         }
       }
-
-      finalQueries['node'] = createNodeQuery(context.nodeInterface, finalQueries['viewer'] ? finalQueries['viewer'].resolve : null)
+      const nodeConfig = _.get(options, 'query.node', false)
+      if (nodeConfig === true) {
+        finalQueries['node'] = createNodeQuery(context.nodeInterface, finalQueries['viewer'] ? finalQueries['viewer'].resolve : null)
+      }
       // finalQueries['node'] = {
       //   name: 'node',
       //   description: 'Fetches an object given its ID',
@@ -390,8 +392,11 @@ const SimpleGraphQL = {
               }
             }
           }
+          const nodeConfig = _.get(options, 'query.node', false)
+          if (nodeConfig === true) {
+            queryFieldsMap['node'] = createNodeQuery(types['Node'], queryFieldsMap['viewer'].resolve)
+          }
 
-          queryFieldsMap['node'] = createNodeQuery(types['Node'], queryFieldsMap['viewer'].resolve)
           const query = new GraphQLObjectType({
             name: queryType.name,
             description: queryType.description,
