@@ -12,7 +12,7 @@ import StringHelper from '../utils/StringHelper'
 import {toGraphQLInputFieldMap} from './toGraphQLInputFieldMap'
 import RemoteSchema from '../definition/RemoteSchema'
 import invariant from '../utils/invariant'
-
+import * as helper from '../utils/helper'
 const toGraphQLFieldConfig = function (name:string,
                                        postfix:string,
                                        fieldType:any,
@@ -219,7 +219,7 @@ const toGraphQLFieldConfig = function (name:string,
                 if (key.endsWith('Id')) {
                   throw new Error(`can't name remote field type ${value['$type'].name} as ${key}:cut off 'Id'`)
                 }
-                const linkId = StringHelper.toInitialLowerCase(key) + 'Id'
+                const linkId = helper.formatLinkId(key)
                 fields[linkId] = {
                   type: graphql.GraphQLID,
                   resolve: async function (root) {

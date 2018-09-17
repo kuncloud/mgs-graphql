@@ -16,7 +16,7 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
     hasPreviousPage: boolean,
     hasNextPage: boolean
   },
-  edges:Array<{
+  edges: Array<{
     node:any,
     cursor:string|number
   }>,
