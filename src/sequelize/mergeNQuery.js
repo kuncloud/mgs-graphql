@@ -49,7 +49,11 @@ export async function mergeNQuery (qid: string,
     node = findNode(fieldNodes[i], nodeName, true)
     if (node) { break }
   }
-  invariant(node, `${schema.name} plural query cant find selection`)
+  if (!node) {
+    console.log(`${schema.name} plural query cant find node selection`)
+    return
+  }
+  // invariant(node, `${schema.name} plural query cant find selection`)
 
   // 处理Remote字段，生成N次查询的合并查询函数
   const fieldsCfg = schema.config.fields
