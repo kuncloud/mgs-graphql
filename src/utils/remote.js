@@ -26,7 +26,7 @@ const protocol: string = 'http'
 // }
 
 function remoteSchemasFromFile (endPoint: string, gqlFile: string, headerKeys = []): GraphQLSchema {
-  console.log('remoteSchemasFromFile call:', endPoint, gqlFile, __dirname)
+  // console.log('remoteSchemasFromFile call:', endPoint, gqlFile, __dirname)
   if (!gqlFile.endsWith('.gql')) { throw new Error('Must postfix with .gql') }
 
   if (!fsHelper.isFile(gqlFile)) {
