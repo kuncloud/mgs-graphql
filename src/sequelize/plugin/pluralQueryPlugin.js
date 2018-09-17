@@ -10,7 +10,6 @@ import StringHelper from '../../utils/StringHelper'
 import resolveConnection from '../resolveConnection'
 import Transformer from '../../transformer'
 import * as helper from '../../utils/helper'
-import invariant from '../../utils/invariant'
 import {mergeNQuery} from '../mergeNQuery'
 const Op = Sequelize.Op
 
@@ -132,45 +131,44 @@ const _cvtKey = (key: string): any => {
   return (Op.hasOwnProperty(key)) ? Op[key] : key
 }
 
-
-export default function pluralQuery(schema: Schema<any>, options: any): void {
+export default function pluralQuery (schema: Schema<any>, options: any): void {
   const name = helper.pluralQueryName(schema.name)
   const searchFields = {}
   const conditionFieldKeys = []
   // 过滤不可搜索的field
   _.forOwn(schema.config.fields, (value, key) => {
-      if (!value) {
-        return
-      }
+    if (!value) {
+      return
+    }
 
-      if (typeof value === 'string' || (typeof value.$type === 'string') || (value.$type instanceof RemoteSchema)) {
-        if (!key.endsWith('Id')) {
-          key = key + 'Id'
-        }
+    if (typeof value === 'string' || (typeof value.$type === 'string') || (value.$type instanceof RemoteSchema)) {
+      if (!key.endsWith('Id')) {
+        key = key + 'Id'
       }
-      if (!value['$type'] || (value['searchable'] !== false && value['hidden'] !== true && !value['resolve'])) {
-        if (value['required']) {
-          searchFields[key] = Object.assign({}, value, {required: false})
-        } else {
-          searchFields[key] = value
-        }
-        if (value['default'] != null) {
-          searchFields[key] = Object.assign({}, searchFields[key], {default: null})
-        }
-        if (value['advancedSearchable']) {
-          if (value['$type'] === Date) {
-            conditionFieldKeys.push(key)
-            searchFields[key] = Object.assign({}, searchFields[key], {$type: DateConditionType})
-          } else if (value['$type'] === Number) {
-            conditionFieldKeys.push(key)
-            searchFields[key] = Object.assign({}, searchFields[key], {$type: NumberConditionType})
-          } else if (value['$type'] === String) {
-            conditionFieldKeys.push(key)
-            searchFields[key] = Object.assign({}, searchFields[key], {$type: StringConditionType})
-          }
+    }
+    if (!value['$type'] || (value['searchable'] !== false && value['hidden'] !== true && !value['resolve'])) {
+      if (value['required']) {
+        searchFields[key] = Object.assign({}, value, {required: false})
+      } else {
+        searchFields[key] = value
+      }
+      if (value['default'] != null) {
+        searchFields[key] = Object.assign({}, searchFields[key], {default: null})
+      }
+      if (value['advancedSearchable']) {
+        if (value['$type'] === Date) {
+          conditionFieldKeys.push(key)
+          searchFields[key] = Object.assign({}, searchFields[key], {$type: DateConditionType})
+        } else if (value['$type'] === Number) {
+          conditionFieldKeys.push(key)
+          searchFields[key] = Object.assign({}, searchFields[key], {$type: NumberConditionType})
+        } else if (value['$type'] === String) {
+          conditionFieldKeys.push(key)
+          searchFields[key] = Object.assign({}, searchFields[key], {$type: StringConditionType})
         }
       }
     }
+  }
   )
 
   if (options && options.conditionArgs) {
@@ -240,7 +238,6 @@ export default function pluralQuery(schema: Schema<any>, options: any): void {
                                context: any,
                                info: graphql.GraphQLResolveInfo,
                                sgContext) {
-
         const dbModel = sgContext.models[schema.name]
 
         let {sort = [{field: 'id', order: 'ASC'}], condition = {}, options} = (args != null ? args : {})
@@ -259,7 +256,7 @@ export default function pluralQuery(schema: Schema<any>, options: any): void {
           }
         })
 
-        //转换GID为int
+        // 转换GID为int
         const cvtGId = (key, src) => {
           if (_.isArray(src)) {
             return _.map(src, (v) => {
@@ -291,7 +288,7 @@ export default function pluralQuery(schema: Schema<any>, options: any): void {
           }
         }
 
-        //替换成Sequelize的OP
+        // 替换成Sequelize的OP
         const replaceOp = (obj) => {
           if (!obj) {
             return obj
@@ -316,7 +313,7 @@ export default function pluralQuery(schema: Schema<any>, options: any): void {
           }
         }
 
-        //如果有option,透传查询条件
+        // 如果有option,透传查询条件
         if (options) {
           if (!_.isEmpty(options.where)) {
             const where = cvtGId('where', options.where)
@@ -352,7 +349,7 @@ export default function pluralQuery(schema: Schema<any>, options: any): void {
           return null
         }
 
-        //处理Db关联的字段
+        // 处理Db关联的字段
         _.forOwn(schema.config.fields, (value, key) => {
           if (typeof value === 'string' || (value && typeof value.$type === 'string')) {
             if (typeof condition[key] !== 'undefined') {
@@ -397,7 +394,7 @@ export default function pluralQuery(schema: Schema<any>, options: any): void {
           }
         })
 
-        //keyword supported
+        // keyword supported
         if (args && args.keywords) {
           const {fields, value} = args.keywords
           const keywordsCondition = []
@@ -435,7 +432,7 @@ export default function pluralQuery(schema: Schema<any>, options: any): void {
           await mergeNQuery(context.qid, res.edges, schema, sgContext.getTargetBinding, info, sgContext.bindings.toDbId)
         }
 
-        console.log('before:', res)
+        // console.log('before:', res)
         return res
       }
     }
