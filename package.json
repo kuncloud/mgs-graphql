@@ -1,6 +1,6 @@
 {
   "name": "mgs-graphql",
-  "version": "1.0.50",
+  "version": "1.0.52",
   "description": "The simple way to generates GraphQL schemas and Sequelize models from your models definition.",
   "main": "lib/index.js",
   "scripts": {
