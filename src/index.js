@@ -322,9 +322,39 @@ const SimpleGraphQL = {
       }
     })
 
+    const rootSubscription = _.isEmpty(context.subscriptions) ? null : new GraphQLObjectType({
+      name: 'Subscription',
+      fields: () => {
+        const subscriptions = {}
+        _.forOwn(context.subscriptions, (value, key) => {
+          const fieldConfig = Transformer.toGraphQLFieldConfig(
+            key,
+            'Payload',
+            value.$type,
+            context)
+
+          subscriptions[key] = {
+            type: fieldConfig.type,
+            resolve: context.wrapSubscriptionResolve(value),
+            description: value.description,
+            subscribe: value.subscribe
+          }
+          if (value.args || fieldConfig.args) {
+            subscriptions[key].args = Transformer.toGraphQLInputFieldMap(
+              StringHelper.toInitialUpperCase(key), {
+                ...fieldConfig.args,
+                ...value.args
+              })
+          }
+        })
+        return subscriptions
+      }
+    })
+
     let schema = new GraphQLSchema({
       query: rootQuery,
-      mutation: rootMutation
+      mutation: rootMutation,
+      subscription: rootSubscription
     })
 
     schema = mergeAllSchemas(
