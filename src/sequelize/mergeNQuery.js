@@ -24,10 +24,8 @@ export async function mergeNQuery (qid: string,
     return
   }
 
-  // console.log('mergeNQuery', qid, schema.name, graphql.responsePathAsArray(info.path), edges, _mergeNQueryBulk)
-  const path = helper.contactPath(graphql.responsePathAsArray(info.path), 'edges', 'node') // 有点写死了
-  const findNode = (field: graphql.SelectionSetNode, findName: string, isDeep: boolean): ?graphql.SelectionSetNode => {
-    // console.log('findNode field:', findName, graphql.print(field))
+  const findSelectionNode = (field: graphql.SelectionSetNode, findName: string, isDeep: boolean): ?graphql.SelectionSetNode => {
+    // console.log('findSelectionNode field:', findName, graphql.print(field))
     if (!field) { return null }
 
     if (field.name && field.name.value === findName) { return field }
@@ -35,35 +33,47 @@ export async function mergeNQuery (qid: string,
     const selections = field.selectionSet && field.selectionSet.selections
     if (isDeep && selections) {
       for (let i = 0; i < selections.length; ++i) {
-        const node = findNode(selections[i], findName, isDeep)
+        const node = findSelectionNode(selections[i], findName, isDeep)
         if (node) { return node }
       }
     }
 
     return null
   }
-  const {fieldNodes = []} = info
-  const nodeName = 'node'
-  let node = null
-  for (let i = 0; i < fieldNodes.length; ++i) {
-    node = findNode(fieldNodes[i], nodeName, true)
-    if (node) { break }
-  }
-  if (!node) {
-    console.log(`${schema.name} plural query cant find node selection`)
-    return
-  }
-  // invariant(node, `${schema.name} plural query cant find selection`)
 
+  // console.log('mergeNQuery', qid, schema.name, graphql.responsePathAsArray(info.path), edges, _mergeNQueryBulk)
+  const path = helper.contactPath(graphql.responsePathAsArray(info.path), 'edges', 'node') // 有点写死了
+  let node = null
   // 处理Remote字段，生成N次查询的合并查询函数
   const fieldsCfg = schema.config.fields
-  for (let key in fieldsCfg) {
+  for (const key in fieldsCfg) {
     if (!fieldsCfg.hasOwnProperty(key)) { continue }
-
     const value = fieldsCfg[key]
+    if (!value || !(value.$type instanceof RemoteSchema)) continue
+
+    if(!node){//laze fetch node
+      const findNode = (info):?graphql.SelectionSetNode => {
+        const {fieldNodes = []} = info
+        const nodeName = 'node'
+        let node = null
+        for (let i = 0; i < fieldNodes.length; ++i) {
+          node = findSelectionNode(fieldNodes[i], nodeName, true)
+          if (node) { break }
+        }
+        if (!node) {
+          console.log(`${schema.name} plural query cant find node selection`)
+        }
+        return node
+      }
+      node = findNode(info)
+      if(!node) {
+        console.log('mergeNQuery:no node found')
+        return
+      }
+    }
+
     // console.log('mergeNQuery:createNQuery',key,value)
     const createMergeNQuery = async(key: string, value: FieldType): ?void => {
-      if (!value || !(value.$type instanceof RemoteSchema)) return
       const linkId = helper.formatLinkId(key)
       invariant(linkId, `schema ${schema.name}: ${linkId} is null`)
       const targetModelName = value['$type'].name
@@ -75,12 +85,13 @@ export async function mergeNQuery (qid: string,
         // throw new Error(`${targetModelName} remote binding not exist`)
         return
       }
+
       const findCurrNodeOnlyInSub = (parent: graphql.SelectionSetNode, key:string): ?graphql.SelectionSetNode => {
         let curr = null
         const selections = parent.selectionSet && parent.selectionSet.selections
         if (selections) {
           for (let i = 0; i < selections.length; ++i) {
-            curr = findNode(selections[i], key, false)
+            curr = findSelectionNode(selections[i], key, false)
             if (curr) { return curr }
           }
         }
