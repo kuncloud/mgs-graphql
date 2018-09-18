@@ -30,7 +30,7 @@ export async function mergeNQuery (qid: string,
     // console.log('findNode field:', findName, graphql.print(field))
     if (!field) { return null }
 
-    if (field.name.value === findName) { return field }
+    if (field.name && field.name.value === findName) { return field }
 
     const selections = field.selectionSet && field.selectionSet.selections
     if (isDeep && selections) {
