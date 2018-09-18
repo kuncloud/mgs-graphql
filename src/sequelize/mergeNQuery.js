@@ -113,18 +113,25 @@ export async function mergeNQuery (qid: string,
       if (!isIncludeId) { currNode = currNode.replace('{', `{ ${id}`) }
       invariant(!_.isEmpty(currNode), `${schema.name} plural query cant find selection set in ${currSelection}`)
 
-      // console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId)
+
       _mergeNQueryBulk[qid] = {
         [currPath]: {}
       }
       const queryContext = _mergeNQueryBulk[qid][currPath]
       // 找到所有sub id
-      const subIds = _.map(edges, (v) => v.node[linkId])
+      // const subIds = _.map(edges, (v) => v.node[linkId])
+      const uniqueIds = (edges) => {
+        let ids = new Set()
+        edges.forEach(x => ids.add(x.node[linkId]))
+        return [...ids]
+      }
+      const subIds = uniqueIds(edges)
       const selection = `{
             edges{
               node ${currNode}
             }
           }`
+      console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
       const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection)
       // console.log('mergeNQuery:mergeNQuery query res:', subIds, selection, res)
       const nodeArr = res && res.edges
