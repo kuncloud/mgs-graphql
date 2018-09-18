@@ -201,7 +201,7 @@ export default class Context {
               const pathArr = responsePathAsArray(info.path)
               const skipIndex = pathArr.length - 3 // eg: [ 'patients', 'edges', 0, 'node', 'city' ] 去掉0，与mergeNQuery的path一致
               invariant(skipIndex > 0, 'err path:', pathArr)
-              // console.log('path arr:', pathArr)
+              // console.log('path arr:', context.qid,pathArr,mergeNQueryBulk[context.qid])
               let path = pathArr[0]
               for (let i = 1; i < pathArr.length; ++i) {
                 if (i === skipIndex) { continue }
@@ -212,12 +212,12 @@ export default class Context {
               // console.log('addRemoteResolver', context.qid, path, queryContext)
               if (queryContext && queryContext.fn) {
                 const res = queryContext.fn(target, id, queryContext)
-                if (_.isEmpty(Object.keys(queryContext))) {
-                  delete mergeNQueryBulk[context.qid][path]
-                  if (_.isEmpty(Object.keys(mergeNQueryBulk[context.qid]))) {
-                    delete mergeNQueryBulk[context.qid]
-                  }
-                }
+                // if (_.isEmpty(Object.keys(queryContext))) {
+                //   delete mergeNQueryBulk[context.qid][path]
+                //   if (_.isEmpty(Object.keys(mergeNQueryBulk[context.qid]))) {
+                //     delete mergeNQueryBulk[context.qid]
+                //   }
+                // }
                 if (res) {
                   return res
                 }

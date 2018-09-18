@@ -9,7 +9,23 @@ import * as helper from '../utils/helper'
 import invariant from '../utils/invariant'
 import type {FieldType} from '../Definition'
 
+const _deadTimeLine = 3 * 60 * 1000 //3 minute
+const _numberOneSession = 20 //每次清理的个数
 const _mergeNQueryBulk:{[id:string]:any} = {}
+function cleanNQuery() {
+  let counter = 0
+  const now = Date.now()
+  for (const qid in _mergeNQueryBulk) {
+    // const oneSession = _mergeNQueryBulk[qid]
+    if(_mergeNQueryBulk[qid].createTime && (now - _mergeNQueryBulk[qid].createTime > _deadTimeLine) ){
+      console.log('cleanNQuery',now,_mergeNQueryBulk[qid].createTime)
+      delete _mergeNQueryBulk[qid]
+      counter++
+      if(counter >= _numberOneSession)
+        break
+    }
+  }
+}
 
 export async function mergeNQuery (qid: string,
                                   edges: Array<{
@@ -113,10 +129,12 @@ export async function mergeNQuery (qid: string,
       if (!isIncludeId) { currNode = currNode.replace('{', `{ ${id}`) }
       invariant(!_.isEmpty(currNode), `${schema.name} plural query cant find selection set in ${currSelection}`)
 
-
-      _mergeNQueryBulk[qid] = {
-        [currPath]: {}
+      cleanNQuery()
+      if(!_mergeNQueryBulk[qid]) {
+        _mergeNQueryBulk[qid] = {createTime: Date.now()}
       }
+
+      _mergeNQueryBulk[qid][currPath] = {}
       const queryContext = _mergeNQueryBulk[qid][currPath]
       // 找到所有sub id
       // const subIds = _.map(edges, (v) => v.node[linkId])
@@ -131,7 +149,7 @@ export async function mergeNQuery (qid: string,
               node ${currNode}
             }
           }`
-      console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
+      // console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
       const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection)
       // console.log('mergeNQuery:mergeNQuery query res:', subIds, selection, res)
       const nodeArr = res && res.edges
@@ -155,11 +173,11 @@ export async function mergeNQuery (qid: string,
         invariant(_.includes(subIds, id), `schema ${schema.name}'s remote ${targetName} query ${apiName}: id(${id}) must be included in ${subIds} `)
 
         const res = qContext[id]
-        delete qContext[id]
-        if (Object.keys(qContext).length === 1) {
-          invariant(qContext.hasOwnProperty('fn'), 'invalid queryContext', qContext)
-          delete qContext['fn']
-        }
+        // delete qContext[id]
+        // if (Object.keys(qContext).length === 1) {
+        //   invariant(qContext.hasOwnProperty('fn'), 'invalid queryContext', qContext)
+        //   delete qContext['fn']
+        // }
 
         return res
       }
