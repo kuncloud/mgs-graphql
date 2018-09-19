@@ -3,6 +3,8 @@ import _ from 'lodash'
 
 import Sequelize from 'sequelize'
 
+import { PubSub } from 'apollo-server'
+
 import Type from '../type'
 import Schema from '../definition/Schema'
 import StringHelper from '../utils/StringHelper'
@@ -123,7 +125,69 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     })
   }
 
+  const rewriteHooks = (schemaOptions: any) => {
+
+    let tableHooks = schemaOptions['table'] && schemaOptions['table']['hooks'] ? schemaOptions['table']['hooks'] : {};
+
+    // 判断schema.options内是否设置了subscription参数,并定义了hook
+    if (schemaOptions && schemaOptions['subscription'] && schemaOptions['subscription']['hooks']) {
+      // && schemaOptions['table'] && schemaOptions['table'].hooks
+      //重新定义table的hooks
+      
+      let subscriptionHooks = schemaOptions['subscription']['hooks'] || {}
+
+      const pubSub: PubSub = schemaOptions['subscription']['pubSub']
+
+      const baseSubscriptionHookFunction = (instance, {baseHookOptions: {pubSub, key}}) => {
+        pubSub.publish(key, {instance})
+      }
+
+      // 遍历所有的subscriptionHooks
+      _.forOwn(subscriptionHooks, (value, key) => {
+        // subscriptionHook 未定义或者设置为false, 不做任何事情
+        if (value) {
+          // 判断订阅hook的执行方式
+          let subscriptionHookFunction = null
+          if (typeof value === 'boolean' && value === true) {
+            if (!pubSub) {
+              throw new Error('schema options subscription `pubSub` is not defined')
+            }
+            subscriptionHookFunction = baseSubscriptionHookFunction
+          }
+          if (typeof value === 'function') {
+            subscriptionHookFunction = value
+          }
+
+          if (subscriptionHookFunction) {
+            tableHooks[key] = (instance, options) => {
+              // 当定义了table hooks, 则先执行hooks方法
+              if (tableHooks[key]) {
+                tableHooks[key](instance, options)
+              }
+              if (pubSub) {
+                options = {
+                  ...options,
+                  baseHookOptions: {
+                    key: `${key}SubscriptionKey`,
+                    pubSub
+                  }
+                }
+              }
+              subscriptionHookFunction(instance, options)
+            }
+          }
+        }
+      })
+    }
+    console.log('tableHooks', tableHooks)
+    return tableHooks
+  } 
+
   // // console.log("Create Sequlize Model with config", model.name, dbDefinition, model.config.options["table"])
-  const dbModel = sequelize.define(schema.name, dbDefinition, schema.config.options['table'])
+  const dbModel = sequelize.define(schema.name, dbDefinition, {
+    ...schema.config.options['table'],
+    hooks: rewriteHooks(schema.config.options)
+  })
+
   return dbModel
 }
