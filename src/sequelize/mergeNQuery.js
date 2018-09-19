@@ -77,13 +77,12 @@ export async function mergeNQuery (qid: string,
           if (node) { break }
         }
         if (!node) {
-          console.log(`${schema.name} plural query cant find node selection`)
+          // console.log(`${schema.name} plural query cant find node selection`)
         }
         return node
       }
       node = findNode(info)
       if(!node) {
-        console.log('mergeNQuery:no node found')
         return
       }
     }
@@ -115,7 +114,7 @@ export async function mergeNQuery (qid: string,
       }
       let currNode = findCurrNodeOnlyInSub(node, key)
       if (!currNode) {
-        console.warn('mergeNQuery:cant find curr node', key)
+        // console.warn('mergeNQuery:cant find curr node', key)
         return
       }
       const id = 'id'
