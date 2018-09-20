@@ -126,22 +126,22 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
   }
 
   const rewriteHooks = (schemaOptions: any) => {
-
-    let tableHooks = schemaOptions['table'] && schemaOptions['table']['hooks'] ? schemaOptions['table']['hooks'] : {};
+    let tableHooks = schemaOptions['table'] && schemaOptions['table']['hooks'] ? schemaOptions['table']['hooks'] : {}
 
     // 判断schema.options内是否设置了subscription参数,并定义了hook
     if (schemaOptions && schemaOptions['subscription'] && schemaOptions['subscription']['hooks']) {
       // && schemaOptions['table'] && schemaOptions['table'].hooks
-      //重新定义table的hooks
-      
+      // 重新定义table的hooks
+
       let subscriptionHooks = schemaOptions['subscription']['hooks'] || {}
 
       const pubSub: PubSub = schemaOptions['subscription']['pubSub']
 
       const baseSubscriptionHookFunction = (instance, {baseHookOptions: {pubSub, key}}) => {
+        console.log('instance.id', instance.id)
         pubSub.publish(key, {instance})
       }
-
+      const tableOldHooks = _.clone(tableHooks)
       // 遍历所有的subscriptionHooks
       _.forOwn(subscriptionHooks, (value, key) => {
         // subscriptionHook 未定义或者设置为false, 不做任何事情
@@ -159,10 +159,10 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
           }
 
           if (subscriptionHookFunction) {
-            tableHooks[key] = (instance, options) => {
+            tableHooks[key] = function (instance, options) {
               // 当定义了table hooks, 则先执行hooks方法
-              if (tableHooks[key]) {
-                tableHooks[key](instance, options)
+              if (tableOldHooks[key]) {
+                tableOldHooks[key](instance, options)
               }
               if (pubSub) {
                 options = {
@@ -179,9 +179,8 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
         }
       })
     }
-    console.log('tableHooks', tableHooks)
     return tableHooks
-  } 
+  }
 
   // // console.log("Create Sequlize Model with config", model.name, dbDefinition, model.config.options["table"])
   const dbModel = sequelize.define(schema.name, dbDefinition, {

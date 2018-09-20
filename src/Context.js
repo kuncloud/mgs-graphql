@@ -200,8 +200,8 @@ export default class Context {
               // const apiName = helper.pluralQueryName(target)
               const pathArr = responsePathAsArray(info.path)
               const skipIndex = pathArr.length - 3 // eg: [ 'patients', 'edges', 0, 'node', 'city' ] 去掉0，与mergeNQuery的path一致
-              //invariant(skipIndex > 0, 'err path:', pathArr)
-              if(skipIndex > 0){
+              // invariant(skipIndex > 0, 'err path:', pathArr)
+              if (skipIndex > 0) {
                 // console.log('path arr:', context.qid,pathArr,mergeNQueryBulk[context.qid])
                 let path = pathArr[0]
                 for (let i = 1; i < pathArr.length; ++i) {
@@ -224,7 +224,6 @@ export default class Context {
                   }
                 }
               }
-
             }
 
             if (root && id && (
@@ -458,15 +457,15 @@ export default class Context {
     }
 
     return (source, args, context, info) => hookFun({
-        type: 'query',
-        config: config
-      }, {
-        source: source,
-        args: args,
-        context: context,
-        info: info,
-        sgContext: self.getSGContext()
-      },
+      type: 'query',
+      config: config
+    }, {
+      source: source,
+      args: args,
+      context: context,
+      info: info,
+      sgContext: self.getSGContext()
+    },
       () => {
         return config.resolve(args, context, info, self.getSGContext())
       }
@@ -487,15 +486,15 @@ export default class Context {
     }
 
     return (source, args, context, info) => hookFun({
-        type: 'subscription',
-        config: config
-      }, {
-        source: source,
-        args: args,
-        context: context,
-        info: info,
-        sgContext: self.getSGContext()
-      },
+      type: 'subscription',
+      config: config
+    }, {
+      source: source,
+      args: args,
+      context: context,
+      info: info,
+      sgContext: self.getSGContext()
+    },
       () => {
         return config.resolve(source, args, context, info, self.getSGContext())
       }
@@ -526,15 +525,15 @@ export default class Context {
     }
 
     return (source, args, context, info) => hookFun({
-        type: 'field',
-        config: config
-      }, {
-        source: source,
-        args: args,
-        context: context,
-        info: info,
-        sgContext: self.getSGContext()
-      },
+      type: 'field',
+      config: config
+    }, {
+      source: source,
+      args: args,
+      context: context,
+      info: info,
+      sgContext: self.getSGContext()
+    },
       () => config.resolve(source, args, context, info, self.getSGContext())
     )
   }
@@ -553,14 +552,14 @@ export default class Context {
     }
 
     return (args, context, info) => hookFun({
-        type: 'mutation',
-        config: config
-      }, {
-        args: args,
-        context: context,
-        info: info,
-        sgContext: self.getSGContext()
-      },
+      type: 'mutation',
+      config: config
+    }, {
+      args: args,
+      context: context,
+      info: info,
+      sgContext: self.getSGContext()
+    },
       () => config.mutateAndGetPayload(args, context, info, self.getSGContext())
     )
   }

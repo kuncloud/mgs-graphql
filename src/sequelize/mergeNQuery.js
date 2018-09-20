@@ -66,7 +66,7 @@ export async function mergeNQuery (qid: string,
     const value = fieldsCfg[key]
     if (!value || !(value.$type instanceof RemoteSchema)) continue
 
-    if (!node) { //lazy fetch node
+    if (!node) { // lazy fetch node
       const findNode = (info):?graphql.SelectionSetNode => {
         const {fieldNodes = []} = info
         const nodeName = 'node'
