@@ -9,20 +9,19 @@ import * as helper from '../utils/helper'
 import invariant from '../utils/invariant'
 import type {FieldType} from '../Definition'
 
-const _deadTimeLine = 3 * 60 * 1000 //3 minute
-const _numberOneSession = 20 //每次清理的个数
+const _deadTimeLine = 3 * 60 * 1000 // 3 minute
+const _numberOneSession = 20 // 每次清理的个数
 const _mergeNQueryBulk:{[id:string]:any} = {}
-function cleanNQuery() {
+function cleanNQuery () {
   let counter = 0
   const now = Date.now()
   for (const qid in _mergeNQueryBulk) {
     // const oneSession = _mergeNQueryBulk[qid]
-    if(_mergeNQueryBulk[qid].createTime && (now - _mergeNQueryBulk[qid].createTime > _deadTimeLine) ){
-      console.log('cleanNQuery',now,_mergeNQueryBulk[qid].createTime)
+    if (_mergeNQueryBulk[qid].createTime && (now - _mergeNQueryBulk[qid].createTime > _deadTimeLine)) {
+      console.log('cleanNQuery', now, _mergeNQueryBulk[qid].createTime)
       delete _mergeNQueryBulk[qid]
       counter++
-      if(counter >= _numberOneSession)
-        break
+      if (counter >= _numberOneSession) { break }
     }
   }
 }
@@ -67,7 +66,7 @@ export async function mergeNQuery (qid: string,
     const value = fieldsCfg[key]
     if (!value || !(value.$type instanceof RemoteSchema)) continue
 
-    if(!node){//laze fetch node
+    if (!node) { //lazy fetch node
       const findNode = (info):?graphql.SelectionSetNode => {
         const {fieldNodes = []} = info
         const nodeName = 'node'
@@ -77,13 +76,12 @@ export async function mergeNQuery (qid: string,
           if (node) { break }
         }
         if (!node) {
-          console.log(`${schema.name} plural query cant find node selection`)
+          // console.log(`${schema.name} plural query cant find node selection`)
         }
         return node
       }
       node = findNode(info)
-      if(!node) {
-        console.log('mergeNQuery:no node found')
+      if (!node) {
         return
       }
     }
@@ -115,7 +113,7 @@ export async function mergeNQuery (qid: string,
       }
       let currNode = findCurrNodeOnlyInSub(node, key)
       if (!currNode) {
-        console.warn('mergeNQuery:cant find curr node', key)
+        // console.warn('mergeNQuery:cant find curr node', key)
         return
       }
       const id = 'id'
@@ -130,7 +128,7 @@ export async function mergeNQuery (qid: string,
       invariant(!_.isEmpty(currNode), `${schema.name} plural query cant find selection set in ${currSelection}`)
 
       cleanNQuery()
-      if(!_mergeNQueryBulk[qid]) {
+      if (!_mergeNQueryBulk[qid]) {
         _mergeNQueryBulk[qid] = {createTime: Date.now()}
       }
 
