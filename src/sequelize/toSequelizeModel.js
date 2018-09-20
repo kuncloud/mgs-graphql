@@ -158,7 +158,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
             subscriptionHookFunction = value
           }
 
-          if (subscriptionHookFunction) {
+          if (subscriptionHookFunction !== null) {
             tableHooks[key] = function (instance, options) {
               // 当定义了table hooks, 则先执行hooks方法
               if (tableOldHooks[key]) {
