@@ -147,7 +147,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
         // subscriptionHook 未定义或者设置为false, 不做任何事情
         if (value) {
           // 判断订阅hook的执行方式
-          let subscriptionHookFunction = null
+          let subscriptionHookFunction = (instance, options) => {}
           if (typeof value === 'boolean' && value === true) {
             if (!pubSub) {
               throw new Error('schema options subscription `pubSub` is not defined')
@@ -158,23 +158,21 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
             subscriptionHookFunction = value
           }
 
-          if (subscriptionHookFunction !== null && typeof subscriptionHookFunction === 'function') {
-            tableHooks[key] = function (instance, options) {
-              // 当定义了table hooks, 则先执行hooks方法
-              if (tableOldHooks[key]) {
-                tableOldHooks[key](instance, options)
-              }
-              if (pubSub) {
-                options = {
-                  ...options,
-                  baseHookOptions: {
-                    key: `${key}SubscriptionKey`,
-                    pubSub
-                  }
+          tableHooks[key] = function (instance, options) {
+            // 当定义了table hooks, 则先执行hooks方法
+            if (tableOldHooks[key]) {
+              tableOldHooks[key](instance, options)
+            }
+            if (pubSub) {
+              options = {
+                ...options,
+                baseHookOptions: {
+                  key: `${key}SubscriptionKey`,
+                  pubSub
                 }
               }
-              subscriptionHookFunction(instance, options)
             }
+            subscriptionHookFunction(instance, options)
           }
         }
       })
