@@ -3,6 +3,8 @@ import _ from 'lodash'
 
 import Sequelize from 'sequelize'
 
+import camelCase from 'camelcase'
+
 import { PubSub } from 'apollo-server'
 
 import Type from '../type'
@@ -125,7 +127,8 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     })
   }
 
-  const rewriteHooks = (schemaOptions: any) => {
+  const rewriteHooks = (schema: Schema) => {
+    const schemaOptions = schema.config.options
     let tableHooks = schemaOptions['table'] && schemaOptions['table']['hooks'] ? schemaOptions['table']['hooks'] : {}
 
     // 判断schema.options内是否设置了subscription参数,并定义了hook
@@ -163,11 +166,12 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
             if (tableOldHooks[key]) {
               tableOldHooks[key](instance, options)
             }
+
             if (pubSub) {
               options = {
                 ...options,
                 baseHookOptions: {
-                  key: `${key}SubscriptionKey`,
+                  key: camelCase(`${schema.name} ${key}SubscriptionKey`),
                   pubSub
                 }
               }
@@ -183,7 +187,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
   // // console.log("Create Sequlize Model with config", model.name, dbDefinition, model.config.options["table"])
   const dbModel = sequelize.define(schema.name, dbDefinition, {
     ...schema.config.options['table'],
-    hooks: rewriteHooks(schema.config.options)
+    hooks: rewriteHooks(schema)
   })
 
   return dbModel
