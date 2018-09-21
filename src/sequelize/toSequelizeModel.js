@@ -127,7 +127,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     })
   }
 
-  const rewriteHooks = (schema: Schema) => {
+  const rewriteHooks = (schema: Schema<any>) => {
     const schemaOptions = schema.config.options
     let tableHooks = schemaOptions['table'] && schemaOptions['table']['hooks'] ? schemaOptions['table']['hooks'] : {}
 
