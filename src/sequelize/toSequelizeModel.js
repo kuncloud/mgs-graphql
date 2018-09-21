@@ -138,7 +138,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
       const pubSub: PubSub = schemaOptions['subscription']['pubSub']
 
       const baseSubscriptionHookFunction = (instance, {baseHookOptions: {pubSub, key}}) => {
-        console.log('instance.id', instance.id)
+        // console.log('instance.id', instance.id)
         pubSub.publish(key, {instance})
       }
       const tableOldHooks = _.clone(tableHooks)
