@@ -17,7 +17,7 @@ export default class Schema<T> {
     subscriptions:{[id:string]: SubscriptionConfig<T>},
     methods:{[id:string]: any},
     statics:{[id:string]: any},
-    description:string
+    description:string,
   }
 
   // remoteLinkConfig:RemoteLinkConfig

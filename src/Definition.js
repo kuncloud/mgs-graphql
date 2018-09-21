@@ -206,6 +206,7 @@ export type FieldType = BaseFieldType| Array<LinkedFieldType> | {
 export type SchemaOptionConfig = {
   description?:string,
   plugin?:Object,
+  subscription?: Object,
   table?:{
     defaultScope?:Object,
     scopes?:Object,
