@@ -138,7 +138,19 @@ export async function mergeNQuery (qid: string,
       // const subIds = _.map(edges, (v) => v.node[linkId])
       const uniqueIds = (edges) => {
         let ids = new Set()
-        edges.forEach(x => ids.add(x.node[linkId]))
+        edges.forEach(x => {
+          const v = x.node[linkId]
+          console.log('linkId:',linkId,v,typeof v)
+          const type = typeof v
+          if(type === 'object'){
+            if(!_.isEmpty(v)){
+              ids.add(v)
+            }
+          }else{
+            ids.add(v)
+          }
+
+        })
         return [...ids]
       }
       const subIds = uniqueIds(edges)
@@ -147,14 +159,14 @@ export async function mergeNQuery (qid: string,
               node ${currNode}
             }
           }`
-      // console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
+      console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
       const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection)
-      // console.log('mergeNQuery:mergeNQuery query res:', subIds, selection, res)
+      console.log('mergeNQuery:mergeNQuery query res:', subIds, selection, res)
       const nodeArr = res && res.edges
       const length = nodeArr && nodeArr.length
       for (let i = 0; i < length; ++i) {
         const node = nodeArr[i].node
-        // console.log('mergeNQuery: add node:', node)
+        console.log('mergeNQuery: add node:', node)
         queryContext[+toDbId(targetModelName, node.id)] = node
       }
 
