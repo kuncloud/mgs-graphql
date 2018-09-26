@@ -18,7 +18,7 @@ function cleanNQuery () {
   for (const qid in _mergeNQueryBulk) {
     // const oneSession = _mergeNQueryBulk[qid]
     if (_mergeNQueryBulk[qid].createTime && (now - _mergeNQueryBulk[qid].createTime > _deadTimeLine)) {
-      console.log('cleanNQuery', now, _mergeNQueryBulk[qid].createTime)
+      // console.log('cleanNQuery', now, _mergeNQueryBulk[qid].createTime)
       delete _mergeNQueryBulk[qid]
       counter++
       if (counter >= _numberOneSession) { break }
@@ -140,7 +140,7 @@ export async function mergeNQuery (qid: string,
         let ids = new Set()
         edges.forEach(x => {
           const v = x.node[linkId]
-          console.log('linkId:',linkId,v,typeof v)
+          // console.log('linkId:',linkId,v,typeof v)
           const type = typeof v
           if(type === 'object'){
             if(!_.isEmpty(v)){
@@ -159,14 +159,14 @@ export async function mergeNQuery (qid: string,
               node ${currNode}
             }
           }`
-      console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
+      // console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
       const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection)
-      console.log('mergeNQuery:mergeNQuery query res:', subIds, selection, res)
+      // console.log('mergeNQuery:mergeNQuery query res:', subIds, selection, res)
       const nodeArr = res && res.edges
       const length = nodeArr && nodeArr.length
       for (let i = 0; i < length; ++i) {
         const node = nodeArr[i].node
-        console.log('mergeNQuery: add node:', node)
+        // console.log('mergeNQuery: add node:', node)
         queryContext[+toDbId(targetModelName, node.id)] = node
       }
 

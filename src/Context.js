@@ -178,7 +178,7 @@ export default class Context {
     if (!this.resolvers[schemaName]) {
       this.resolvers[schemaName] = {}
     }
-    console.log('addRemoteResolver:',schemaName,fieldName,linkId,target)
+    // console.log('addRemoteResolver:',schemaName,fieldName,linkId,target)
     const self = this
     this.resolvers[schemaName][fieldName] = {
       fragment: `... on ${schemaName} { ${linkId} }`,
@@ -187,7 +187,6 @@ export default class Context {
         if (_.isEmpty(targetSchema)) {
           return root[fieldName]
         }
-        console.log('ffff',root)
 
         const fn = self.wrapFieldResolve({
           name: fieldName,
@@ -207,7 +206,7 @@ export default class Context {
               const skipIndex = pathArr.length - 3 // eg: [ 'patients', 'edges', 0, 'node', 'city' ] 去掉0，与mergeNQuery的path一致
               // invariant(skipIndex > 0, 'err path:', pathArr)
               if (skipIndex > 0) {
-                console.log('path arr:', context.qid,pathArr,mergeNQueryBulk[context.qid])
+                // console.log('path arr:', context.qid,pathArr,mergeNQueryBulk[context.qid])
                 let path = pathArr[0]
                 for (let i = 1; i < pathArr.length; ++i) {
                   if (i === skipIndex) { continue }
@@ -215,7 +214,7 @@ export default class Context {
                 }
 
                 const queryContext = mergeNQueryBulk[context.qid] && mergeNQueryBulk[context.qid][path]
-                console.log('addRemoteResolver', context.qid,id, path, queryContext)
+                // console.log('addRemoteResolver', context.qid,id, path, queryContext)
                 if (queryContext && queryContext.fn) {
                   const res = queryContext.fn(target, id, queryContext)
                   // if (_.isEmpty(Object.keys(queryContext))) {
@@ -373,7 +372,7 @@ export default class Context {
   }
 
   remoteGraphQLObjectType (name: string): GraphQLObjectType {
-    console.log('Context.remoteGraphQLObjectType',name)
+    // console.log('Context.remoteGraphQLObjectType',name)
     const typeName = this.remotePrefix + name
     if (!this.graphQLObjectTypes[typeName]) {
       const objectType = new GraphQLObjectType({
