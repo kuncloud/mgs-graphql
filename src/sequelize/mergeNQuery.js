@@ -142,14 +142,13 @@ export async function mergeNQuery (qid: string,
           const v = x.node[linkId]
           // console.log('linkId:',linkId,v,typeof v)
           const type = typeof v
-          if(type === 'object'){
-            if(!_.isEmpty(v)){
+          if (type === 'object') {
+            if (!_.isEmpty(v)) {
               ids.add(v)
             }
-          }else{
+          } else {
             ids.add(v)
           }
-
         })
         return [...ids]
       }

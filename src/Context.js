@@ -196,10 +196,9 @@ export default class Context {
             if (!root) return
 
             const id = root[linkId]
-            if(id === undefined)
-              return null
-            if(typeof id === 'object' && id === null)//db 对应字段为null
-              return null
+            if (id === undefined) { return null }
+            if (typeof id === 'object' && id === null) { return null }// db 对应字段为null
+
             if (context.qid && mergeNQueryBulk[context.qid]) {
               // const apiName = helper.pluralQueryName(target)
               const pathArr = responsePathAsArray(info.path)
