@@ -449,7 +449,20 @@ export default class Context {
 
   wrapQueryResolve (config: QueryConfig): any {
     const self = this
-    let hookFun = (action, invokeInfo, next) => next()
+    const {handleError} = this.options
+
+    let hookFun = (action, invokeInfo, next) => {
+      return next().then(
+        n => n, 
+        e => {
+          if (handleError) {
+            handleError(e)
+          } else {
+            throw e
+          }
+        }
+      )
+    }
 
     if (this.options.hooks != null) {
       this.options.hooks.reverse().forEach(hook => {
@@ -478,7 +491,21 @@ export default class Context {
 
   wrapSubscriptionResolve (config: SubscriptionConfig): any {
     const self = this
-    let hookFun = (action, invokeInfo, next) => next()
+
+    const {handleError} = this.options
+
+    let hookFun = (action, invokeInfo, next) => {
+      return next().then(
+        n => n, 
+        e => {
+          if (handleError) {
+            handleError(e)
+          } else {
+            throw e
+          }
+        }
+      )
+    }
 
     if (this.options.hooks != null) {
       this.options.hooks.reverse().forEach(hook => {
@@ -545,7 +572,21 @@ export default class Context {
   wrapMutateAndGetPayload (config: MutationConfig): any {
     const self = this
 
-    let hookFun = (action, invokeInfo, next) => next()
+    const {handleError} = this.options
+
+    let hookFun = (action, invokeInfo, next) => {
+      return next().then(
+        n => n, 
+        e => {
+          if (handleError) {
+            handleError(e)
+          } else {
+            throw e
+          }
+        }
+      )
+    }
+    
     if (this.options.hooks != null) {
       this.options.hooks.reverse().forEach(hook => {
         if (!hook.filter || hook.filter({type: 'mutation', config})) {
