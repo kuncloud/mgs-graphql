@@ -384,5 +384,6 @@ export type BuildOptionConfig = {
                 info:GraphQLResolveInfo,
                 sgContext:SGContext) => any}>
   },
-  headerKeys?: [String]
+  headerKeys?: [String],
+  handleError?: Function
 }

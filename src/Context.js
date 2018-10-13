@@ -453,7 +453,7 @@ export default class Context {
 
     let hookFun = (action, invokeInfo, next) => {
       return next().then(
-        n => n, 
+        n => n,
         e => {
           if (handleError) {
             handleError(e)
@@ -496,7 +496,7 @@ export default class Context {
 
     let hookFun = (action, invokeInfo, next) => {
       return next().then(
-        n => n, 
+        n => n,
         e => {
           if (handleError) {
             handleError(e)
@@ -576,7 +576,7 @@ export default class Context {
 
     let hookFun = (action, invokeInfo, next) => {
       return next().then(
-        n => n, 
+        n => n,
         e => {
           if (handleError) {
             handleError(e)
@@ -586,7 +586,7 @@ export default class Context {
         }
       )
     }
-    
+
     if (this.options.hooks != null) {
       this.options.hooks.reverse().forEach(hook => {
         if (!hook.filter || hook.filter({type: 'mutation', config})) {
