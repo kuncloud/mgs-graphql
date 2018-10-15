@@ -451,19 +451,18 @@ export default class Context {
     const self = this
     const {handleError} = this.options
 
-    let hookFun = (action, invokeInfo, next) => {
-      return () => {
-        next().then(
-          n => n,
-          e => {
-            if (handleError) {
-              handleError(e)
-            } else {
-              throw e
-            }
-          }
-        )
+    let hookFun = async (action, invokeInfo, next) => {
+      
+      try {
+        return await next()
+      } catch (e) {
+        if (handleError) {
+          handleError(e)
+        } else {
+          throw e
+        }
       }
+      
     }
 
     if (this.options.hooks != null) {
@@ -496,18 +495,15 @@ export default class Context {
 
     const {handleError} = this.options
 
-    let hookFun = (action, invokeInfo, next) => {
-      return () => {
-        next().then(
-          n => n,
-          e => {
-            if (handleError) {
-              handleError(e)
-            } else {
-              throw e
-            }
-          }
-        )
+    let hookFun = async (action, invokeInfo, next) => {
+      try {
+        return await next()
+      } catch (e) {
+        if (handleError) {
+          handleError(e)
+        } else {
+          throw e
+        }
       }
     }
 
@@ -578,18 +574,15 @@ export default class Context {
 
     const {handleError} = this.options
 
-    let hookFun = (action, invokeInfo, next) => {
-      return () => {
-        next().then(
-          n => n,
-          e => {
-            if (handleError) {
-              handleError(e)
-            } else {
-              throw e
-            }
-          }
-        )
+    let hookFun = async (action, invokeInfo, next) => {
+      try {
+        return await next()
+      } catch (e) {
+        if (handleError) {
+          handleError(e)
+        } else {
+          throw e
+        }
       }
     }
 
