@@ -165,7 +165,10 @@ export default class Context {
 
     let target = null
     _.forOwn(this.remoteInfo['schema'], (value) => {
-      if (value && value.getType(modeName)) {
+      if(!value)
+        return
+      let type = value.getType(modeName)
+      if (type && (!type.description || !type.description.startsWith('__'))){//如果是远程对象，不允许merge产生传递
         target = value
         return false
       }

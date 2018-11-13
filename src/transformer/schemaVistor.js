@@ -116,14 +116,17 @@ class RemoteDirective extends SchemaRemoteVisitor {
         return
       }
 
-      let found
+      let found = null
       _.forOwn(srcSchemas, (target, key) => {
-        if (target && target.getType(modeName)) {
-          found = {
-            obj: target.getType(modeName),
-            schemaName: key
-          }
-          if (found.obj && (_.isEmpty(found.obj.description) || !found.obj.description.startsWith('__'))) {
+        if(!target)
+          return
+        let type = target.getType(modeName)
+        if (type) {
+          if (type && (_.isEmpty(type.description) || !type.description.startsWith('__'))) {
+            found = {
+              obj: type,
+              schemaName: key
+            }
             return false
           }
         }
@@ -133,15 +136,18 @@ class RemoteDirective extends SchemaRemoteVisitor {
     }
 
     const addMergedObject = (schemaName: string, obj: GraphQLOutputType) => {
+      if(obj.description && obj.description.startsWith('__')){//如果是远程对象，不允许merge产生传递
+        return
+      }
       if (obj instanceof GraphQLList) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLNonNull) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType) {
         if (!otherTypes[schemaName][obj.name]) {
+          // console.log('addObj1:',schemaName,obj.name,obj.description)
           invariant(!obj.description || !obj.description.startsWith('__'),
             `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
-          // console.log('addObj1:',schemaName,obj.name)
           otherTypes[schemaName][obj.name] = obj
           obj.description = '__' + (obj.description ? obj.description : '')
           const fields = obj.getFields()
@@ -160,9 +166,9 @@ class RemoteDirective extends SchemaRemoteVisitor {
         }
       } else {
         if (!otherTypes[schemaName][obj.name]) {
+          // console.log('addObj2:',schemaName,obj.name,obj.description)
           invariant(!obj.description || !obj.description.startsWith('__'),
             `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
-          // console.log('addObj2:',schemaName,obj.name)
           otherTypes[schemaName][obj.name] = obj
           obj.description = '__' + (obj.description ? obj.description : '')
         }
