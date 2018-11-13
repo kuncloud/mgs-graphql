@@ -136,14 +136,14 @@ class RemoteDirective extends SchemaRemoteVisitor {
     }
 
     const addMergedObject = (schemaName: string, obj: GraphQLOutputType) => {
-      if(obj.description && obj.description.startsWith('__')){//如果是远程对象，不允许merge产生传递
-        return
-      }
       if (obj instanceof GraphQLList) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLNonNull) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType) {
+        if(obj && obj.description && obj.description .startsWith('__')){//如果是远程对象，不允许merge产生传递
+          return
+        }
         if (!otherTypes[schemaName][obj.name]) {
           // console.log('addObj1:',schemaName,obj.name,obj.description)
           invariant(!obj.description || !obj.description.startsWith('__'),
@@ -165,6 +165,9 @@ class RemoteDirective extends SchemaRemoteVisitor {
           addMergedObject(schemaName, types[i])
         }
       } else {
+        if(obj && obj.description && obj.description .startsWith('__')){//如果是远程对象，不允许merge产生传递
+          return
+        }
         if (!otherTypes[schemaName][obj.name]) {
           // console.log('addObj2:',schemaName,obj.name,obj.description)
           invariant(!obj.description || !obj.description.startsWith('__'),
