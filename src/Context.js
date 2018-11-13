@@ -165,10 +165,9 @@ export default class Context {
 
     let target = null
     _.forOwn(this.remoteInfo['schema'], (value) => {
-      if(!value)
-        return
+      if (!value) { return }
       let type = value.getType(modeName)
-      if (type && (!type.description || !type.description.startsWith('__'))){//如果是远程对象，不允许merge产生传递
+      if (type && (!type.description || !type.description.startsWith('__'))) { // 如果是远程对象，不允许merge产生传递
         target = value
         return false
       }
@@ -455,7 +454,6 @@ export default class Context {
     const {handleError} = this.options
 
     let hookFun = async (action, invokeInfo, next) => {
-      
       try {
         return await next()
       } catch (e) {
@@ -465,7 +463,6 @@ export default class Context {
           throw e
         }
       }
-      
     }
 
     if (this.options.hooks != null) {
