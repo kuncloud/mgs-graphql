@@ -140,13 +140,13 @@ class RemoteDirective extends SchemaRemoteVisitor {
       } else if (obj instanceof GraphQLNonNull) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType) {
-        if (obj && obj.description && obj.description.startsWith('__')) { // 如果是远程对象，不允许merge产生传递
-          return
-        }
+        // if (obj && obj.description && obj.description.startsWith('__')) { // 如果是远程对象，不允许merge产生传递
+        //   return
+        // }
         if (!otherTypes[schemaName][obj.name]) {
           // console.log('addObj1:',schemaName,obj.name,obj.description)
-          invariant(!obj.description || !obj.description.startsWith('__'),
-            `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
+          // invariant(!obj.description || !obj.description.startsWith('__'),
+          //   `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
           otherTypes[schemaName][obj.name] = obj
           obj.description = '__' + (obj.description ? obj.description : '')
           const fields = obj.getFields()
@@ -164,13 +164,13 @@ class RemoteDirective extends SchemaRemoteVisitor {
           addMergedObject(schemaName, types[i])
         }
       } else {
-        if (obj && obj.description && obj.description.startsWith('__')) { // 如果是远程对象，不允许merge产生传递
-          return
-        }
+        // if (obj && obj.description && obj.description.startsWith('__')) { // 如果是远程对象，不允许merge产生传递
+        //   return
+        // }
         if (!otherTypes[schemaName][obj.name]) {
           // console.log('addObj2:',schemaName,obj.name,obj.description)
-          invariant(!obj.description || !obj.description.startsWith('__'),
-            `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
+          // invariant(!obj.description || !obj.description.startsWith('__'),
+          //   `graph object ${obj.name} in ${schemaName}'s description invalid:${obj.description ? obj.description : ''}`)
           otherTypes[schemaName][obj.name] = obj
           obj.description = '__' + (obj.description ? obj.description : '')
         }

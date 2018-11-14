@@ -187,6 +187,7 @@ export default class Context {
       resolve: (root, args, context, info) => {
         const targetSchema = self.getTargetSchema(target)
         if (_.isEmpty(targetSchema)) {
+          console.error(`addRemoteResolver:can't find remote object ${target} in schema ${schemaName}:${fieldName}`)
           return root[fieldName]
         }
 
