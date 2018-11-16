@@ -118,7 +118,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
   if (schema.config.options['table'] && schema.config.options['table']['indexes']) {
     schema.config.options['table']['indexes'].forEach((item) => {
       let tempFields = []
-      if (!!item['fields']) {
+      if (item['fields']) {
         item['fields'].forEach((field) => {
           tempFields.push(field.replace(/([A-Z])/g, '_$1').toLowerCase())
         })

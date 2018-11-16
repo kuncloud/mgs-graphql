@@ -21,11 +21,14 @@ import {
 } from 'graphql-tools/dist/schemaVisitor'
 import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
 import invariant from '../utils/invariant'
+import * as helper from '../utils/helper'
+
 let otherTypes: {
   [key:string]:{
     [key:string]:GraphQLNamedType
   }
 } = {}
+
 class SchemaRemoteVisitor extends SchemaVisitor {
   static visitTheSchema (schema: GraphQLSchema,
                         context: {
@@ -117,16 +120,22 @@ class RemoteDirective extends SchemaRemoteVisitor {
       }
 
       let found = null
-      _.forOwn(srcSchemas, (target, key) => {
-        if (!target) { return }
-        let type = target.getType(modeName)
+      _.forOwn(srcSchemas, (value, key) => {
+        if (!value) { return }
+        let type = value.getType(modeName)
         if (type) {
-          if (type && (_.isEmpty(type.description) || !type.description.startsWith('__'))) {
+          if (found && found.obj) {
+            if (helper.calcRemoteLevels(found.obj.description) > helper.calcRemoteLevels(type.description)) {
+              found = {
+                obj: type,
+                schemaName: key
+              }
+            }
+          } else {
             found = {
               obj: type,
               schemaName: key
             }
-            return false
           }
         }
       })
@@ -140,9 +149,6 @@ class RemoteDirective extends SchemaRemoteVisitor {
       } else if (obj instanceof GraphQLNonNull) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLObjectType || obj instanceof GraphQLInterfaceType) {
-        // if (obj && obj.description && obj.description.startsWith('__')) { // 如果是远程对象，不允许merge产生传递
-        //   return
-        // }
         if (!otherTypes[schemaName][obj.name]) {
           // console.log('addObj1:',schemaName,obj.name,obj.description)
           // invariant(!obj.description || !obj.description.startsWith('__'),
@@ -164,9 +170,6 @@ class RemoteDirective extends SchemaRemoteVisitor {
           addMergedObject(schemaName, types[i])
         }
       } else {
-        // if (obj && obj.description && obj.description.startsWith('__')) { // 如果是远程对象，不允许merge产生传递
-        //   return
-        // }
         if (!otherTypes[schemaName][obj.name]) {
           // console.log('addObj2:',schemaName,obj.name,obj.description)
           // invariant(!obj.description || !obj.description.startsWith('__'),

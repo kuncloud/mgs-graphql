@@ -17,3 +17,16 @@ export function contactPath (...values) {
     return path + '_' + v
   })
 }
+export function calcRemoteLevels (description: string): number {
+  if (_.isEmpty(description)) { return 0 }
+
+  let level = 0
+  let start = 0
+  const len = '__'.length
+  while (description.substr(start, len) === '__') {
+    level++
+    start += len
+  }
+
+  return level
+}

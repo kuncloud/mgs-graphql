@@ -163,17 +163,28 @@ export default class Context {
       return
     }
 
-    let target = null
-    _.forOwn(this.remoteInfo['schema'], (value) => {
-      if (!value) { return }
-      let type = value.getType(modeName)
-      if (type && (!type.description || !type.description.startsWith('__'))) { // 如果是远程对象，不允许merge产生传递
-        target = value
-        return false
+    let target = {
+      schema: null,
+      type: null
+    }
+    _.forOwn(this.remoteInfo['schema'], (value, key) => {
+      let type = value && value.getType(modeName)
+      if (type) {
+        if (target && target.type) {
+          if (helper.calcRemoteLevels(target.type.description) > helper.calcRemoteLevels(type.description)) {
+            target.schema = value
+            target.type = type
+          }
+        } else {
+          target.schema = value
+          target.type = type
+        }
+      } else {
+        // console.error('getTargetSchema:',modeName,key,type.name,type.description)
       }
     })
 
-    return target
+    return target.schema
   }
 
   addRemoteResolver (schemaName: string, fieldName: string, linkId: string, target: string) {
