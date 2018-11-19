@@ -23,6 +23,7 @@ import RemoteSchema from './definition/RemoteSchema'
 import type {SchemaOptionConfig, BuildOptionConfig} from './Definition'
 import {mergeAllSchemas} from './transformer/schemaVistor'
 import type {RemoteConfig} from './utils/remote'
+import iterateFile from './utils/iterateFile'
 
 const SimpleGraphQL = {
 
@@ -48,6 +49,8 @@ const SimpleGraphQL = {
   Service: Service,
 
   // RemoteLinkConfig: RemoteLinkConfig,
+
+  iterateFile: iterateFile,
 
   /**
    * Define a Schema
@@ -315,7 +318,7 @@ const SimpleGraphQL = {
             inputFields: inputFields,
             outputFields: outputFields,
             mutateAndGetPayload: context.wrapMutateAndGetPayload(value),
-            description: value.doc
+            description: value.description
           })
         })
         return fields
