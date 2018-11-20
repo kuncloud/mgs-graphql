@@ -1,7 +1,7 @@
 {
   "name": "mgs-graphql",
   "version": "1.0.67",
-  "description": "The simple way to generates GraphQL schemas and Sequelize models from your models definition.",
+  "description": "The simple way to generates GraphQL schemas and Sequelize models from your models definition,microservice supported",
   "main": "lib/index.js",
   "scripts": {
     "format": "standard --fix",
@@ -13,15 +13,15 @@
     "buildAndPublish": "npm run flow && npm run format && npm run build && npm publish",
     "docs": "documentation build -c documentation.yml --sort-order alpha -f md -o docs/API.md src/index.js src/Definition.js"
   },
-  "author": "logerzhu",
+  "author": "MGS Team",
   "repository": {
     "type": "git",
-    "url": "git@github.com:logerzhu/simple-graphql.git"
+    "url": "git@github.com:kuncloud/simple-graphql.git"
   },
   "bugs": {
-    "url": "https://github.com/logerzhu/simple-graphql/issues"
+    "url": "https://github.com/kuncloud/simple-graphql/issues"
   },
-  "homepage": "https://github.com/logerzhu/simple-graphql",
+  "homepage": "https://github.com/kuncloud/simple-graphql",
   "license": "MIT",
   "keywords": [
     "GraphQL",
@@ -31,21 +31,22 @@
     "MySQL",
     "PostgreSQL",
     "SQLite",
-    "MSSQL"
+    "MSSQL",
+    "MicroService"
   ],
   "dependencies": {
     "apollo-link-context": "^1.0.8",
     "apollo-link-http": "^1.5.4",
     "apollo-server": "^2.0.8",
     "camelcase": "^5.0.0",
-    "continuation-local-storage": "^3.2.1",
     "graphql-binding": "^2.2.2",
     "graphql-tools": "^3.0.4",
     "lodash": "^4.17.10",
     "moment": "^2.22.2",
-    "mysql2": "^1.5.3",
     "node-fetch": "^2.2.0",
-    "sequelize": "^4.38.0"
+    "sequelize": "^4.38.0",
+    "graphql-relay": "^0.5.5",
+    "mysql2": "^1.5.3"
   },
   "devDependencies": {
     "babel-eslint": "^7.2.3",
@@ -59,11 +60,13 @@
     "express-graphql": "^0.6.12",
     "flow-bin": "^0.51.1",
     "graphql": "^0.10.5",
-    "graphql-relay": "^0.5.5",
     "jest": "^20.0.4",
     "pre-commit": "^1.2.2",
     "sqlite3": "^3.1.13",
     "standard": "^10.0.3"
+  },
+  "peerDependencies": {
+    "graphql": "^0.11.0 || ^0.12.0 || ^0.13.0"
   },
   "standard": {
     "plugins": [
