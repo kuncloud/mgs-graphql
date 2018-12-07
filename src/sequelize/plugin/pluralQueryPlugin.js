@@ -416,7 +416,8 @@ export default function pluralQuery (schema: Schema<any>, options: any): void {
                 if (dbModel.options.underscored) {
                   colFieldName = fieldName + StringHelper.toUnderscoredName(field.substr(field.indexOf('.')))
                 }
-                keywordsCondition.push(Sequelize.where(Sequelize.col(colFieldName), {[Op.like]: '%' + value + '%'}))
+                // sequelize v4开始不支持Sequelize.where/col等方法，改为sequelize.where
+                keywordsCondition.push(dbModel.sequelize.where(dbModel.sequelize.col(colFieldName), {[Op.like]: '%' + value + '%'}))
               } else {
                 keywordsCondition.push({[field]: {[Op.like]: '%' + value + '%'}})
               }
