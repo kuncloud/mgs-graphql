@@ -1,9 +1,11 @@
 // @flow
 import Sequelize from 'sequelize'
+import { GraphQLID } from 'graphql'
+import { fromGlobalId, toGlobalId } from 'graphql-relay'
 export default async function resolveConnection (dbModel:Sequelize.Model, args:{
-  after?: string,
+  after?: GraphQLID,
   first?: number,
-  before?: string,
+  before?: GraphQLID,
   last?: number,
   include?:Array<any>,
   condition?:any,
@@ -11,14 +13,14 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
   sort?: Array<{field: string, order: "ASC"|"DESC"}>
 }):Promise<{
   pageInfo: {
-    startCursor:string|number,
-    endCursor:string|number,
+    startCursor:GraphQLID,
+    endCursor:GraphQLID,
     hasPreviousPage: boolean,
     hasNextPage: boolean
   },
   edges: Array<{
     node:any,
-    cursor:string|number
+    cursor:GraphQLID
   }>,
   count: number
 }> {
@@ -26,6 +28,8 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
     field: 'id',
     order: 'ASC'
   }]} = args
+  if (after) after = fromGlobalId(after).id
+  if (before) before = fromGlobalId(before).id
   let reverse = false
   const count = await dbModel.count({
     include: include,
@@ -71,15 +75,15 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
   }
   return {
     pageInfo: {
-      startCursor: startCursor,
-      endCursor: endCursor,
+      startCursor: toGlobalId(dbModel.name, startCursor),
+      endCursor: toGlobalId(dbModel.name, endCursor),
       hasPreviousPage: offset > 0,
       hasNextPage: offset + result.length < count
     },
     edges: reverse ? result.map(node => {
       return {
         node: node,
-        cursor: count - (offset + (index++))
+        cursor: toGlobalId(dbModel.name, count - (offset + (index++)))
       }
     }).reverse() : result.map(node => {
       return {
