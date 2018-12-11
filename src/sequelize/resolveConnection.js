@@ -88,7 +88,7 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
     }).reverse() : result.map(node => {
       return {
         node: node,
-        cursor: offset + (++index)
+        cursor: toGlobalId(dbModel.name, offset + (++index))
       }
     }),
     count: count
