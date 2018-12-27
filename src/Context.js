@@ -75,7 +75,7 @@ export default class Context {
 
   schemas: {[id:string]: Schema<any>}
 
-  loaders: {[id:string]: DataLoader<any>}
+  loaders: {[id:string]: DataLoader<any, *>}
 
   services: {[id:string]: Service<any>}
 
