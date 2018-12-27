@@ -429,9 +429,9 @@ export default function pluralQuery (schema: Schema<any>, options: any): void {
         }
 
         let res = await resolveConnection(dbModel, {...args, condition, include})
-        // if (context.qid && res && res.edges && res.edges.length > 1) {
-        //   await mergeNQuery(context.qid, res.edges, schema, sgContext.getTargetBinding, info, sgContext.bindings.toDbId)
-        // }
+        if (context.qid && res && res.edges && res.edges.length > 1) {
+          await mergeNQuery(context.qid, res.edges, schema, sgContext.getTargetBinding, info, sgContext.bindings.toDbId)
+        }
 
         // console.log('before:', res)
         return res
