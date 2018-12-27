@@ -475,7 +475,7 @@ export default class Context {
 
   initLoader (name: string): any {
     const model = this.dbModels[name]
-    return new DataLoader(async(ids: [number]) => {
+    return new DataLoader(async(ids: any) => {
       const lists = await model.findAll({
         where: {
           id: {
