@@ -157,6 +157,7 @@ const toGraphQLFieldConfig = function (name:string,
               } else {
                 const upperCaseFieldName = StringHelper.toInitialUpperCase(fieldName)
                 // 从dataloader取数据
+                // flow报错，sgContext获取loader，用context替代
                 if (mgsContext.options.dataLoader !== false && mgsContext.loaders) {
                   if (mgsContext.loaders[upperCaseFieldName]) return mgsContext.loaders[upperCaseFieldName].load(root[fieldName + 'Id'])
                 }
