@@ -131,7 +131,7 @@ export default class Context {
     this.remotePrefix = '_remote_'
   }
 
-  getSGContext () {
+  getSGContext ():? {[key:string]: any} {
     return {
       sequelize: this.dbContext.sequelize,
       loaders: this.loaders,
