@@ -473,7 +473,7 @@ export default class Context {
     return self.dbModels[typeName]
   }
 
-  initLoader (name: string): DataLoader {
+  initLoader (name: string): DataLoader<any> {
     const model = this.dbModels[name]
     return new DataLoader(async(ids: any) => {
       const lists = await model.findAll({
