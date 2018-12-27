@@ -385,5 +385,6 @@ export type BuildOptionConfig = {
                 sgContext:SGContext) => any}>
   },
   headerKeys?: [String],
-  handleError?: Function
+  handleError?: Function,
+  dataLoader?: Boolean
 }

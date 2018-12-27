@@ -35,6 +35,10 @@ export default function singularQuery (schema:Schema<any>, options:any):void {
         if (args === null || Object.keys(args).length === 0) {
           return null
         }
+        // 先从dataloader取数据
+        if (args.id && sgContext.dataLoader !== false && sgContext.loaders && sgContext.loaders[schema.name]) {
+          return sgContext.loaders[schema.name].load(args.id)
+        }
         return sgContext.models[schema.name].findOne({
           where: {
             ...args

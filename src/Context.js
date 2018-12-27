@@ -14,6 +14,7 @@ import {
 } from 'graphql'
 import type {GraphQLResolveInfo} from 'graphql'
 import camelcase from 'camelcase'
+import DataLoader from 'dataloader'
 
 import Schema from './definition/Schema'
 import Service from './definition/Service'
@@ -74,6 +75,8 @@ export default class Context {
 
   schemas: {[id:string]: Schema<any>}
 
+  loaders: {[id:string]: DataLoader<any>}
+
   services: {[id:string]: Service<any>}
 
   graphQLObjectTypes: {[id:string]: GraphQLObjectType}
@@ -94,7 +97,10 @@ export default class Context {
 
   constructor (sequelize: Sequelize, options: BuildOptionConfig, remoteCfg: RemoteConfig) {
     this.dbContext = new SequelizeContext(sequelize)
-    this.options = {...options}
+    this.options = {
+      dataLoader: true
+    }
+    _.assign(this.options, options)
 
     this.dbModels = {}
     this.schemas = {}
@@ -103,6 +109,7 @@ export default class Context {
     this.queries = {}
     this.mutations = {}
     this.subscriptions = {}
+    this.loaders = {}
 
     this.connectionDefinitions = {}
 
@@ -127,6 +134,8 @@ export default class Context {
   getSGContext () {
     return {
       sequelize: this.dbContext.sequelize,
+      loaders: this.loaders,
+      dataLoader: this.options.dataLoader,
       models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
       services: _.mapValues(this.services, (service) => service.config.statics),
       bindings: {
@@ -333,6 +342,9 @@ export default class Context {
     })
 
     this.dbModel(schema.name)
+
+    // 添加loader
+    if (this.options.dataLoader !== false) this.loaders[schema.name] = this.initLoader(schema.name)
   }
 
   addService (service: Service<any>) {
@@ -459,6 +471,25 @@ export default class Context {
       })
     }
     return self.dbModels[typeName]
+  }
+
+  initLoader (name: string): any {
+    const model = this.dbModels[name]
+    return new DataLoader(async(ids: [number]) => {
+      const lists = await model.findAll({
+        where: {
+          id: {
+            [Sequelize.Op.in]: ids
+          }
+        }
+      })
+      const temp = {}
+      lists.map(item => {
+        temp[item.id] = item
+      })
+
+      return ids.map(id => temp[id])
+    })
   }
 
   wrapQueryResolve (config: QueryConfig): any {

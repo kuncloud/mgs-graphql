@@ -154,7 +154,12 @@ const toGraphQLFieldConfig = function (name:string,
               if (root[fieldName] != null && root[fieldName].id != null) {
                 return root[fieldName]
               } else {
-                return root['get' + StringHelper.toInitialUpperCase(fieldName)]()
+                const upperCaseFieldName = StringHelper.toInitialUpperCase(fieldName)
+                // 从dataloader取数据
+                if (sgContext.dataLoader !== false && sgContext.loaders && sgContext.loaders[upperCaseFieldName]) {
+                  return sgContext.loaders[upperCaseFieldName].load(root[fieldName + 'Id'])
+                }
+                return root['get' + upperCaseFieldName]()
               }
             }
             if (root && root[fieldName] && (
