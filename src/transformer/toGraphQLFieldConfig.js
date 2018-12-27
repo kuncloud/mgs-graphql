@@ -142,6 +142,7 @@ const toGraphQLFieldConfig = function (name:string,
         type: context.connectionType(fieldType.substr(0, fieldType.length - 'Connection'.length))
       }
     } else {
+      const mgsContext = context
       return {
         type: context.graphQLObjectType(fieldType),
         resolve: context.wrapFieldResolve({
@@ -156,9 +157,8 @@ const toGraphQLFieldConfig = function (name:string,
               } else {
                 const upperCaseFieldName = StringHelper.toInitialUpperCase(fieldName)
                 // 从dataloader取数据
-                if (sgContext.dataLoader !== false && sgContext.loaders) {
-                  const loader = sgContext.loaders[upperCaseFieldName]
-                  if (loader) return sgContext.loaders[upperCaseFieldName].load(root[fieldName + 'Id'])
+                if (mgsContext.options.dataLoader !== false && mgsContext.loaders) {
+                  if (mgsContext.loaders[upperCaseFieldName]) return mgsContext.loaders[upperCaseFieldName].load(root[fieldName + 'Id'])
                 }
                 return root['get' + upperCaseFieldName]()
               }
