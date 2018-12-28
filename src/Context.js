@@ -134,7 +134,7 @@ export default class Context {
     this.remoteInfo = buildBindings(remoteCfg, {headerKeys: options.headerKeys})
     this.remotePrefix = '_remote_'
     // 暂时只开启一个remoteLoader，可考虑开启多个
-    this.remoteLoader = this.options.remoteLoader !== false ? this.initRemoteLoader() : {}
+    this.remoteLoader = this.options.remoteLoader !== false ? this.initRemoteLoader() : null
   }
 
   getSGContext () {
@@ -263,8 +263,8 @@ export default class Context {
                 typeof id === 'number' ||
                 typeof id === 'string'
               )) {
-              if (sgContext.remoteLoader && self.options.remoteLoader !== false) {
-                return sgContext.remoteLoader.load({id, info, target})
+              if (self.remoteLoader && self.options.remoteLoader !== false) {
+                return self.remoteLoader.load({id, info, target})
               }
               return info.mergeInfo.delegateToSchema({
                 schema: targetSchema,
@@ -513,6 +513,8 @@ export default class Context {
       const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '')
 
       const binding = this.getSGContext().getTargetBinding(target)
+      if (binding === null) return null
+
       const res = await binding.query[StringHelper.toInitialLowerCase(target) + 's'](
         {
           options: {
