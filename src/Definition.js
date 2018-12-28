@@ -386,5 +386,6 @@ export type BuildOptionConfig = {
   },
   headerKeys?: [String],
   handleError?: Function,
-  dataLoader?: boolean
+  dataLoader?: boolean,
+  remoteLoader?: boolean
 }

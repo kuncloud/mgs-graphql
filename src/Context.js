@@ -15,6 +15,7 @@ import {
 import type {GraphQLResolveInfo} from 'graphql'
 import camelcase from 'camelcase'
 import DataLoader from 'dataloader'
+import parseFields from 'graphql-parse-fields'
 
 import Schema from './definition/Schema'
 import Service from './definition/Service'
@@ -77,6 +78,8 @@ export default class Context {
 
   loaders: {[id:string]: DataLoader<any, *>}
 
+  remoteLoader: DataLoader<any, *>
+
   services: {[id:string]: Service<any>}
 
   graphQLObjectTypes: {[id:string]: GraphQLObjectType}
@@ -98,7 +101,8 @@ export default class Context {
   constructor (sequelize: Sequelize, options: BuildOptionConfig, remoteCfg: RemoteConfig) {
     this.dbContext = new SequelizeContext(sequelize)
     this.options = {
-      dataLoader: true
+      dataLoader: true,
+      remoteLoader: true
     }
     _.assign(this.options, options)
 
@@ -129,12 +133,15 @@ export default class Context {
 
     this.remoteInfo = buildBindings(remoteCfg, {headerKeys: options.headerKeys})
     this.remotePrefix = '_remote_'
+    // 暂时只开启一个remoteLoader，可考虑开启多个
+    this.remoteLoader = this.options.remoteLoader !== false ? this.initRemoteLoader() : {}
   }
 
   getSGContext () {
     return {
       sequelize: this.dbContext.sequelize,
       loaders: this.loaders,
+      remoteLoader: this.remoteLoader,
       dataLoader: this.options.dataLoader,
       models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
       services: _.mapValues(this.services, (service) => service.config.statics),
@@ -256,6 +263,9 @@ export default class Context {
                 typeof id === 'number' ||
                 typeof id === 'string'
               )) {
+              if (sgContext.remoteLoader && self.options.remoteLoader !== false) {
+                return sgContext.remoteLoader.load({id, info, target})
+              }
               return info.mergeInfo.delegateToSchema({
                 schema: targetSchema,
                 operation: 'query',
@@ -486,6 +496,39 @@ export default class Context {
       const temp = {}
       lists.map(item => {
         temp[item.id] = item
+      })
+
+      return ids.map(id => temp[id])
+    }, {
+      cache: false
+    })
+  }
+
+  initRemoteLoader (): DataLoader<any, *> {
+    return new DataLoader(async(options) => {
+      const ids = options.map(i => i.id)
+      // 暂时不处理多个不同的remote情况
+      const {info, target} = options[0]
+      const parsed = parseFields(info)
+      const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '')
+
+      const binding = this.getSGContext().getTargetBinding(target)
+      const res = await binding.query[StringHelper.toInitialLowerCase(target) + 's'](
+        {
+          options: {
+            where: {
+              id: {
+                in: ids
+              }
+            }
+          }
+        },
+        `{edges{node ${strInfo}}}`
+      )
+
+      const temp = {}
+      res.edges.map(({node}) => {
+        temp[node.id] = node
       })
 
       return ids.map(id => temp[id])
