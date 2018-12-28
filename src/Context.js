@@ -78,7 +78,7 @@ export default class Context {
 
   loaders: {[id:string]: DataLoader<any, *>}
 
-  remoteLoader: DataLoader<any, *>
+  remoteLoader: DataLoader<any, *> | null
 
   services: {[id:string]: Service<any>}
 
