@@ -504,7 +504,7 @@ export default class Context {
     })
   }
 
-  initRemoteLoader ():? DataLoader<any, *> {
+  initRemoteLoader ():? DataLoader<any, *> | null {
     return new DataLoader(async(options) => {
       const ids = options.map(i => i.id)
       // 暂时不处理多个不同的remote情况
