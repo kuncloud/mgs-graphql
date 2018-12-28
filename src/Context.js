@@ -513,7 +513,7 @@ export default class Context {
       const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '')
 
       const binding = this.getSGContext().getTargetBinding(target)
-      if (!binding) return null
+      if (!binding) return []
 
       const res = await binding.query[StringHelper.toInitialLowerCase(target) + 's'](
         {
