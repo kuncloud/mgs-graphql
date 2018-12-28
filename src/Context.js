@@ -510,7 +510,7 @@ export default class Context {
       // 暂时不处理多个不同的remote情况
       const {info, target} = options[0]
       const parsed = parseFields(info)
-      const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '')
+      const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
 
       const binding = this.getSGContext().getTargetBinding(target)
       if (!binding) return []
