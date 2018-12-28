@@ -504,7 +504,7 @@ export default class Context {
     })
   }
 
-  initRemoteLoader (): DataLoader<any, *> | null {
+  initRemoteLoader (): DataLoader<any, *> {
     return new DataLoader(async(options) => {
       const ids = options.map(i => i.id)
       // 暂时不处理多个不同的remote情况
@@ -513,7 +513,7 @@ export default class Context {
       const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '')
 
       const binding = this.getSGContext().getTargetBinding(target)
-      if (!binding) return null
+      if (!binding) return new Error(`未找到${target}对应的binging`)
 
       const res = await binding.query[StringHelper.toInitialLowerCase(target) + 's'](
         {
