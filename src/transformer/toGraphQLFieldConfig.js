@@ -159,7 +159,7 @@ const toGraphQLFieldConfig = function (name:string,
                 // 从dataloader取数据
                 // flow报错，sgContext获取loader，用context替代
                 if (mgsContext.options.dataLoader !== false && mgsContext.loaders) {
-                  if (mgsContext.loaders[upperCaseFieldName]) return mgsContext.loaders[upperCaseFieldName].load(root[fieldName + 'Id'])
+                  if (mgsContext.loaders[upperCaseFieldName] && root[fieldName + 'Id']) return mgsContext.loaders[upperCaseFieldName].load(root[fieldName + 'Id'])
                 }
                 return root['get' + upperCaseFieldName]()
               }

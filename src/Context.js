@@ -489,6 +489,8 @@ export default class Context {
       })
 
       return ids.map(id => temp[id])
+    }, {
+      cache: false
     })
   }
 
