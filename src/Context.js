@@ -504,35 +504,64 @@ export default class Context {
     })
   }
 
+  /**
+   * 当一个请求有多个remote时，分别组织参数
+   * @param options
+   */
+  parseRemoteTarget (options?: any): {[key: string]: {ids: [string], info: any}} {
+    const targets = {}
+
+    if (options) {
+      options.map(({target, id, info}) => {
+        if (_.keys(targets).indexOf(target) === -1) {
+          _.assign(targets, {
+            [target]: {
+              ids: [],
+              info
+            }
+          })
+        }
+
+        if (_.keys(targets).indexOf(target) >= 0) {
+          targets[target].ids.push(id)
+        }
+      })
+    }
+    return targets
+  }
+
   initRemoteLoader (): DataLoader<any, *> | null {
+    const self = this
     return new DataLoader(async(options) => {
-      const ids = options.map(i => i.id)
-      // 暂时不处理多个不同的remote情况
-      const {info, target} = options[0]
-      const parsed = parseFields(info)
-      const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
+      const targets = self.parseRemoteTarget(options)
+      const ids = options.map(o => o.id)
+      const temp = {}
 
-      const binding = this.getSGContext().getTargetBinding(target)
-      if (!binding) return []
+      for (let target in targets) {
+        const {ids, info} = targets[target]
+        const parsed = parseFields(info)
+        const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
 
-      const res = await binding.query[StringHelper.toInitialLowerCase(target) + 's'](
-        {
-          options: {
-            where: {
-              id: {
-                in: ids
+        const binding = this.getSGContext().getTargetBinding(target)
+        if (!binding) return []
+
+        const res = await binding.query[StringHelper.toInitialLowerCase(target) + 's'](
+          {
+            options: {
+              where: {
+                id: {
+                  in: ids
+                }
               }
             }
-          }
-        },
-        `{edges{node ${strInfo}}}`
-      )
+          },
+          `{edges{node ${strInfo}}}`
+        )
 
-      const temp = {}
-      res.edges.map(({node}) => {
-        temp[node.id] = node
-      })
-
+        res.edges.map(({node}) => {
+          temp[node.id] = node
+        })
+      }
       return ids.map(id => temp[id])
     }, {
       cache: false
