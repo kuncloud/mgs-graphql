@@ -540,7 +540,8 @@ export default class Context {
       for (let target in targets) {
         const {ids, info} = targets[target]
         const parsed = parseFields(info)
-        const strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
+        let strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
+        if (strInfo.indexOf('id') === -1) strInfo = strInfo.replace('{', '{id,')
 
         const binding = this.getSGContext().getTargetBinding(target)
         if (!binding) return []
@@ -555,7 +556,7 @@ export default class Context {
               }
             }
           },
-          `{edges{node ${strInfo}}}`
+          `{edges{node${strInfo}}}`
         )
 
         res.edges.map(({node}) => {
