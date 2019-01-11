@@ -2,7 +2,7 @@
 import Sequelize from 'sequelize'
 import _ from 'lodash'
 
-const resolve = async function connectionResolve (Model, {args = {}, condition = {}, include = [], sort = []}) {
+const resolve = async function connectionResolve (Model, {args = {}, condition = {}, include = [], sort = [], sequelizeOptions = {}}) {
   let {after, first, before, last} = args
   first = (first == null ? 100 : first)
 
@@ -28,7 +28,8 @@ const resolve = async function connectionResolve (Model, {args = {}, condition =
     include,
     limit: first,
     offset: offset,
-    order
+    order,
+    ...sequelizeOptions
   })
 
   let index = 0
