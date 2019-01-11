@@ -10,7 +10,9 @@ const resolve = async function connectionResolve (Model, {args = {}, condition =
     where: {
       ...condition
     },
-    include
+    include,
+    distinct: true,
+    col: sequelizeOptions.group ? sequelizeOptions.group : 'id'
   })
   if (last || before) {
     throw new Error('Argument last or before is not supported!')
