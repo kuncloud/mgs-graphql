@@ -510,6 +510,7 @@ export default class Context {
    */
   parseRemoteTarget (options?: any): {[key: string]: {ids: [string], info: any}} {
     const targets = {}
+    const self = this
 
     if (options) {
       options.map(({id, info}) => {
@@ -518,31 +519,45 @@ export default class Context {
           _.assign(targets, {
             [target]: {
               ids: [],
-              info
+              info,
+              parsedInfo: {id: true}
             }
           })
         }
 
         if (_.keys(targets).indexOf(target) >= 0) {
           targets[target].ids.push(id)
+          targets[target].parsedInfo = self.analysisInfo(targets[target].parsedInfo, info)
         }
       })
     }
     return targets
   }
 
+  analysisInfo (info: any, newInfo: any): any {
+    const parsed = parseFields(info)
+    const newParsed = parseFields(newInfo)
+    return _.merge(parsed, newParsed)
+  }
+
+  // 对id做简单处理，防止一个请求中clinic{id}和getClinic{id, name}匹配错乱问题
+  encryptId (id: string, target: string): string {
+    return `${id}-${target}`
+  }
+
   initRemoteLoader (): DataLoader<any, *> | null {
     const self = this
     return new DataLoader(async(options) => {
       const targets = self.parseRemoteTarget(options)
-      const ids = options.map(o => o.id)
+      const ids = options.map(o => self.encryptId(o.id, o.info.fieldName))
       const temp = {}
 
       for (let target in targets) {
-        const {ids, info} = targets[target]
-        const parsed = parseFields(info)
-        let strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
-        if (strInfo.indexOf('id') === -1) strInfo = strInfo.replace('{', '{id,')
+        const {ids, info, parsedInfo} = targets[target]
+        // const parsed = parseFields(info)
+        let strInfo = JSON.stringify(parsedInfo).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
+        // 防止前端不传id导致下面匹配不上
+        // if (!strInfo.startsWith('{id')) strInfo = strInfo.replace('{', '{id,')
 
         const type = info.returnType.name
         const binding = this.getSGContext().getTargetBinding(type)
@@ -562,7 +577,7 @@ export default class Context {
         )
 
         res.edges.map(({node}) => {
-          temp[node.id] = node
+          temp[self.encryptId(node.id, target)] = node
         })
       }
       return ids.map(id => temp[id])
