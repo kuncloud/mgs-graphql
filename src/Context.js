@@ -512,7 +512,8 @@ export default class Context {
     const targets = {}
 
     if (options) {
-      options.map(({target, id, info}) => {
+      options.map(({id, info}) => {
+        const target = info.fieldName
         if (_.keys(targets).indexOf(target) === -1) {
           _.assign(targets, {
             [target]: {
@@ -543,10 +544,11 @@ export default class Context {
         let strInfo = JSON.stringify(parsed).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
         if (strInfo.indexOf('id') === -1) strInfo = strInfo.replace('{', '{id,')
 
-        const binding = this.getSGContext().getTargetBinding(target)
+        const type = info.returnType.name
+        const binding = this.getSGContext().getTargetBinding(type)
         if (!binding) return []
 
-        const res = await binding.query[StringHelper.toInitialLowerCase(target) + 's'](
+        const res = await binding.query[StringHelper.toInitialLowerCase(type) + 's'](
           {
             options: {
               where: {
