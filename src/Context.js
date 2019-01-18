@@ -508,7 +508,7 @@ export default class Context {
    * 当一个请求有多个remote时，分别组织参数
    * @param options
    */
-  parseRemoteTarget (options?: any): {[key: string]: {ids: [string], info: any}} {
+  parseRemoteTarget (options?: any): {[key: string]: {ids: [string], info: any, parsedInfo: {[key: string]: any}}} {
     const targets = {}
     const self = this
 
@@ -520,6 +520,7 @@ export default class Context {
             [target]: {
               ids: [],
               info,
+              // 默认传递id，防止前端不传id导致下面匹配不上
               parsedInfo: {id: true}
             }
           })
@@ -534,8 +535,8 @@ export default class Context {
     return targets
   }
 
-  analysisInfo (info: any, newInfo: any): any {
-    const parsed = parseFields(info)
+  // 将所有同类型的字段合并，防止一个请求取同类型不同字段出现报错。如{id, name} {id, code}
+  analysisInfo (parsed: {[key: string]: any}, newInfo: any): {[key: string]: any} {
     const newParsed = parseFields(newInfo)
     return _.merge(parsed, newParsed)
   }
@@ -554,10 +555,7 @@ export default class Context {
 
       for (let target in targets) {
         const {ids, info, parsedInfo} = targets[target]
-        // const parsed = parseFields(info)
         let strInfo = JSON.stringify(parsedInfo).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
-        // 防止前端不传id导致下面匹配不上
-        // if (!strInfo.startsWith('{id')) strInfo = strInfo.replace('{', '{id,')
 
         const type = info.returnType.name
         const binding = this.getSGContext().getTargetBinding(type)
