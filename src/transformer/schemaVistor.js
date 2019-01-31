@@ -210,11 +210,12 @@ function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: {[key:string]:Gra
     srcSchema: schemaMerged
   })
 
-  _.forOwn(otherTypes, (value, key) => {
-    if (_.isEmpty(value)) {
-      throw new Error(`merged schema ${key}:none of schema is merging`)
-    }
-  })
+  // update by yy on 2009/1/31, 因为只作为API调用，不引用Schema时，是找不到有关联scehma的。
+  // _.forOwn(otherTypes, (value, key) => {
+  //   if (_.isEmpty(value)) {
+  //     throw new Warn(`merged schema ${key}:none of schema is merging`)
+  //   }
+  // })
 
   let objMap = {}
   _.forOwn(otherTypes, (objs, schemaName) => {
