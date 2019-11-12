@@ -566,7 +566,7 @@ export default class Context {
           const res = await binding.query[`get${type}sByIds`]({
             ids: distinctIds
           }, strInfo)
-          for(let node of res) {
+          for (let node of res) {
             temp[self.encryptId(node.id, target)] = node
           }
         } else {

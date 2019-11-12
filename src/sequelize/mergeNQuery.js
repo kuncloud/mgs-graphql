@@ -8,6 +8,7 @@ import RemoteSchema from '../definition/RemoteSchema'
 import * as helper from '../utils/helper'
 import invariant from '../utils/invariant'
 import type {FieldType} from '../Definition'
+import * as relay from 'graphql-relay'
 
 const _deadTimeLine = 3 * 60 * 1000 // 3 minute
 const _numberOneSession = 20 // 每次清理的个数
@@ -153,20 +154,24 @@ export async function mergeNQuery (qid: string,
         return [...ids]
       }
       const subIds = uniqueIds(edges)
-      const selection = `{
+      if (binding.query[`get${targetModelName}sByIds`]) {
+        const res = await binding.query[`get${targetModelName}sByIds`]({ids: subIds.map(subId => relay.toGlobalId(targetModelName, subId))}, currNode)
+        for (let node of res) {
+          queryContext[+toDbId(targetModelName, node.id)] = node
+        }
+      } else {
+        const selection = `{
             edges{
               node ${currNode}
             }
           }`
-      // console.log('mergeNQuery:create a NQuery function:', currPath, apiName, currNode, isIncludeId,subIds)
-      const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection)
-      // console.log('mergeNQuery:mergeNQuery query res:', subIds, selection, res)
-      const nodeArr = res && res.edges
-      const length = nodeArr && nodeArr.length
-      for (let i = 0; i < length; ++i) {
-        const node = nodeArr[i].node
-        // console.log('mergeNQuery: add node:', node)
-        queryContext[+toDbId(targetModelName, node.id)] = node
+        const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection)
+        const nodeArr = res && res.edges
+        const length = nodeArr && nodeArr.length
+        for (let i = 0; i < length; ++i) {
+          const node = nodeArr[i].node
+          queryContext[+toDbId(targetModelName, node.id)] = node
+        }
       }
 
       queryContext.fn = (targetName:string, id:number, qContext:{[id:string]:any}) => {
