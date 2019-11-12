@@ -1,6 +1,6 @@
 {
   "name": "mgs-graphql",
-  "version": "1.0.87",
+  "version": "1.0.88",
   "description": "The simple way to generates GraphQL schemas and Sequelize models from your models definition,microservice supported",
   "main": "lib/index.js",
   "scripts": {
@@ -16,7 +16,7 @@
   "author": "MGS Team",
   "repository": {
     "type": "git",
-    "url": "git@github.com:kuncloud/simple-graphql.git"
+    "url": "git+ssh://git@github.com/kuncloud/simple-graphql.git"
   },
   "bugs": {
     "url": "https://github.com/kuncloud/simple-graphql/issues"

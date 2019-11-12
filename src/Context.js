@@ -550,7 +550,7 @@ export default class Context {
     const self = this
     return new DataLoader(async(options) => {
       const targets = self.parseRemoteTarget(options)
-      const ids = options.map(o => self.encryptId(o.id, o.info.fieldName))
+      const encryptIds = options.map(o => self.encryptId(o.id, o.info.fieldName))
       const temp = {}
 
       for (let target in targets) {
@@ -560,25 +560,35 @@ export default class Context {
         const type = info.returnType.name
         const binding = this.getSGContext().getTargetBinding(type)
         if (!binding) return []
-
-        const res = await binding.query[StringHelper.toInitialLowerCase(type) + 's'](
-          {
-            options: {
-              where: {
-                id: {
-                  in: ids
+        // 优先使用get${modelName}sByIds
+        const distinctIds = [...new Set(ids)]
+        if (binding.query[`get${type}sByIds`]) {
+          const res = await binding.query[`get${type}sByIds`]({
+            ids: distinctIds
+          }, strInfo)
+          for(let node of res) {
+            temp[self.encryptId(node.id, target)] = node
+          }
+        } else {
+          const res = await binding.query[StringHelper.toInitialLowerCase(type) + 's'](
+            {
+              first: distinctIds.length,
+              options: {
+                where: {
+                  id: {
+                    in: distinctIds
+                  }
                 }
               }
-            }
-          },
-          `{edges{node${strInfo}}}`
-        )
-
-        res.edges.map(({node}) => {
-          temp[self.encryptId(node.id, target)] = node
-        })
+            },
+            `{edges{node${strInfo}}}`
+          )
+          res.edges.map(({node}) => {
+            temp[self.encryptId(node.id, target)] = node
+          })
+        }
       }
-      return ids.map(id => temp[id])
+      return encryptIds.map(encryptId => temp[encryptId])
     }, {
       cache: false
     })
