@@ -1,28 +1,14 @@
 // @flow
-import _ from 'lodash'
-import type { LinkedFieldConfig, QueryConfig, MutationConfig, SubscriptionConfig,
-  FieldType, SchemaOptionConfig, HasOneConfig, BelongsToConfig, HasManyConfig,
-  BelongsToManyConfig, AssociationConfig} from '../Definition'
+const _ = require('lodash')
 
-export default class Schema<T> {
-  name:string
+module.exports = class Schema {
+  name
 
-  config:{
-    fields:{[id:string]: FieldType},
-    links:{[id:string]:LinkedFieldConfig},
-    associations:AssociationConfig<T>,
-    options:SchemaOptionConfig,
-    queries:{[id:string]: QueryConfig<T>},
-    mutations:{[id:string]: MutationConfig<T>},
-    subscriptions:{[id:string]: SubscriptionConfig<T>},
-    methods:{[id:string]: any},
-    statics:{[id:string]: any},
-    description:string,
-  }
+  config
 
   // remoteLinkConfig:RemoteLinkConfig
 
-  constructor (name:string, options:SchemaOptionConfig = {}) {
+  constructor (name, options = {}) {
     this.name = name
     this.config = {
       fields: {},
@@ -48,7 +34,7 @@ export default class Schema<T> {
    * Add the model base fields, and each field has a corresponding database column.
    * In default, each field generate a GraphQL field, unless it config with "hidden:true".
    */
-  fields (fields:{[id:string]: FieldType}):Schema<T> {
+  fields (fields) {
     this.config.fields = Object.assign(this.config.fields, fields)
     return this
   }
@@ -56,7 +42,7 @@ export default class Schema<T> {
   /**
    * Add the model link fields, and each link generate a GraphQL field but no corresponding database column.
    */
-  links (links:{[id:string]: LinkedFieldConfig}):Schema<T> {
+  links (links) {
     _.forOwn(links, (value, key) => {
       value.isLinkField = true
     })
@@ -68,7 +54,7 @@ export default class Schema<T> {
   /**
    * Add the GraphQL query methods.
    */
-  queries (queries:{[string]:QueryConfig<T>}):Schema<T> {
+  queries (queries) {
     // TODO duplicate check
     this.config.queries = Object.assign(this.config.queries, queries)
     return this
@@ -77,7 +63,7 @@ export default class Schema<T> {
   /**
    * Add the GraphQL mutataion methods.
    */
-  mutations (mutations:{[string]:MutationConfig<T>}):Schema<T> {
+  mutations (mutations) {
     // TODO duplicate check
     this.config.mutations = Object.assign(this.config.mutations, mutations)
     return this
@@ -86,7 +72,7 @@ export default class Schema<T> {
   /**
    * Add the GraphQL subscription methods.
    */
-  subscriptions (subscriptions:{[string]:SubscriptionConfig<T>}):Schema<T> {
+  subscriptions (subscriptions) {
     // TODO duplicate check
     this.config.subscriptions = Object.assign(this.config.subscriptions, subscriptions)
     return this
@@ -95,7 +81,7 @@ export default class Schema<T> {
   /**
    * Add instance method to current Schema.
    */
-  methods (methods:{[string]:any}):Schema<T> {
+  methods (methods) {
     this.config.methods = Object.assign(this.config.methods, methods)
     return this
   }
@@ -103,7 +89,7 @@ export default class Schema<T> {
   /**
    * Add statics method to current Schema.
    */
-  statics (statics:{[string]:any}):Schema<T> {
+  statics (statics) {
     this.config.statics = Object.assign(this.config.statics, statics)
     return this
   }
@@ -111,7 +97,7 @@ export default class Schema<T> {
   /**
    * Add {@link http://docs.sequelizejs.com/en/latest/docs/associations/#hasone|HasOne} relations to current Schema.
    */
-  hasOne (config:HasOneConfig<T>):Schema<T> {
+  hasOne (config) {
     _.forOwn(config, (value, key) => {
       this.config.associations.hasOne[key] = value
     })
@@ -121,7 +107,7 @@ export default class Schema<T> {
   /**
    * Add {@link http://docs.sequelizejs.com/en/latest/docs/associations/#belongsto|BelongsTo} relations to current Schema.
    */
-  belongsTo (config:BelongsToConfig):Schema<T> {
+  belongsTo (config) {
     _.forOwn(config, (value, key) => {
       this.config.associations.belongsTo[key] = value
     })
@@ -131,7 +117,7 @@ export default class Schema<T> {
   /**
    * Add {@link http://docs.sequelizejs.com/en/latest/docs/associations/#one-to-many-associations|HasMany} relations to current Schema.
    */
-  hasMany (config:HasManyConfig<T>):Schema<T> {
+  hasMany (config) {
     _.forOwn(config, (value, key) => {
       this.config.associations.hasMany[key] = value
     })
@@ -141,14 +127,14 @@ export default class Schema<T> {
   /**
    * Add {@link http://docs.sequelizejs.com/en/latest/docs/associations/#belongs-to-many-associations|BelongsToMany} relations to current Schema.
    */
-  belongsToMany (config:BelongsToManyConfig):Schema<T> {
+  belongsToMany (config) {
     _.forOwn(config, (value, key) => {
       this.config.associations.belongsToMany[key] = value
     })
     return this
   }
 
-  plugin<E> (plugin:(schema:Schema<any>, options:E)=>void, options:E) {
+  plugin (plugin, options) {
     plugin(this, options)
   }
 }

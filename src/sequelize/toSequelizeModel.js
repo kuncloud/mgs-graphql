@@ -1,20 +1,17 @@
 // @flow
-import _ from 'lodash'
+const _ = require('lodash')
 
-import Sequelize from 'sequelize'
+const Sequelize = require('sequelize')
 
-import camelCase from 'camelcase'
+const camelCase = require('camelcase')
 
-import { PubSub } from 'apollo-server'
-
-import Type from '../type'
-import Schema from '../definition/Schema'
-import StringHelper from '../utils/StringHelper'
-import ModelRef from '../definition/RemoteSchema'
-export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any>):Sequelize.Model {
+const Type = require('../type')
+const StringHelper = require('../utils/StringHelper')
+const ModelRef = require('../definition/RemoteSchema')
+module.exports = function toSequelizeModel (sequelize, schema) {
   const dbDefinition = {}
 
-  const dbType = (fieldType:any) => {
+  const dbType = (fieldType) => {
     if (fieldType instanceof Type.ScalarFieldType) {
       return fieldType.columnType
     }
@@ -127,7 +124,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
     })
   }
 
-  const rewriteHooks = (schema: Schema<any>) => {
+  const rewriteHooks = (schema) => {
     const schemaOptions = schema.config.options
     let tableHooks = schemaOptions['table'] && schemaOptions['table']['hooks'] ? schemaOptions['table']['hooks'] : {}
 
@@ -138,7 +135,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
 
       let subscriptionHooks = schemaOptions['subscription']['hooks'] || {}
 
-      const pubSub: PubSub = schemaOptions['subscription']['pubSub']
+      const pubSub = schemaOptions['subscription']['pubSub']
 
       const baseSubscriptionHookFunction = (instance, {baseHookOptions: {pubSub, key}}) => {
         // console.log('instance.id', instance.id)
@@ -168,8 +165,7 @@ export default function toSequelizeModel (sequelize:Sequelize, schema:Schema<any
             }
 
             if (pubSub) {
-              options = {
-                ...options,
+              options.baseHookOptions = {
                 baseHookOptions: {
                   key: camelCase(`${schema.name} ${key}SubscriptionKey`),
                   pubSub

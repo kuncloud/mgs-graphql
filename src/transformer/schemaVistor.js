@@ -1,47 +1,35 @@
 // @flow
-import {
+const {
   isOutputType,
   GraphQLNonNull,
-  GraphQLSchema,
   GraphQLUnionType,
   GraphQLInterfaceType,
   GraphQLObjectType,
   GraphQLList
-} from 'graphql'
-import _ from 'lodash'
-import {
+} = require('graphql')
+const _ = require('lodash')
+const {
   mergeSchemas
-} from 'graphql-tools'
-import type {GraphQLField, GraphQLOutputType, GraphQLNamedType} from 'graphql'
-import type {IResolversParameter} from 'graphql-tools'
-import {
+} = require('graphql-tools')
+const {
   SchemaVisitor,
   visitSchema,
   healSchema
-} from 'graphql-tools/dist/schemaVisitor'
-import type{VisitableSchemaType} from 'graphql-tools/dist/schemaVisitor'
-import invariant from '../utils/invariant'
-import * as helper from '../utils/helper'
+} = require('graphql-tools/dist/schemaVisitor')
+const invariant = require('../utils/invariant')
+const helper = require('../utils/helper')
 
-let otherTypes: {
-  [key:string]:{
-    [key:string]:GraphQLNamedType
-  }
-} = {}
+let otherTypes = {}
 
 class SchemaRemoteVisitor extends SchemaVisitor {
-  static visitTheSchema (schema: GraphQLSchema,
-                        context: {
-                          [key: string]: any
-                        } = Object.create(null)): GraphQLSchema {
-    function visitorSelector (type: VisitableSchemaType,
-                             methodName: string): Array<SchemaRemoteVisitor> {
+  static visitTheSchema (schema, context = Object.create(null)) {
+    function visitorSelector (type, methodName) {
       const visitors = []
       if (methodName !== 'visitFieldDefinition') {
         return visitors
       }
 
-      const isStub = (type: VisitableSchemaType) => {
+      const isStub = (type) => {
         return (type instanceof GraphQLObjectType) &&
           type.name.startsWith(context.prefix) && !_.isEmpty(type.description) &&
           type.description.startsWith('{') &&
@@ -94,13 +82,7 @@ class SchemaRemoteVisitor extends SchemaVisitor {
     return schema
   }
 
-  constructor (config: {
-    name: string,
-    args: {[name: string]: any},
-    visitedType: VisitableSchemaType,
-    schema: GraphQLSchema,
-    context: {[key: string]: any}
-  }) {
+  constructor (config) {
     super()
     this.name = config.name
     this.args = config.args
@@ -111,10 +93,10 @@ class SchemaRemoteVisitor extends SchemaVisitor {
 }
 
 class RemoteDirective extends SchemaRemoteVisitor {
-  visitFieldDefinition (field: GraphQLField<any, any>) {
+  visitFieldDefinition (field) {
     invariant(!_.isEmpty(this.args), 'Must provide args')
 
-    const getTargetSchema = (modeName: string, srcSchemas: {[key:string]:GraphQLSchema}): ?{schemaName:string, obj:GraphQLObjectType} => {
+    const getTargetSchema = (modeName, srcSchemas) => {
       if (_.isEmpty(srcSchemas)) {
         return
       }
@@ -143,7 +125,7 @@ class RemoteDirective extends SchemaRemoteVisitor {
       return found
     }
 
-    const addMergedObject = (schemaName: string, obj: GraphQLOutputType) => {
+    const addMergedObject = (schemaName, obj) => {
       if (obj instanceof GraphQLList) {
         addMergedObject(schemaName, obj.ofType)
       } else if (obj instanceof GraphQLNonNull) {
@@ -197,7 +179,7 @@ class RemoteDirective extends SchemaRemoteVisitor {
   }
 }
 
-function mergeAllSchemas (schema: GraphQLSchema, schemaMerged: {[key:string]:GraphQLSchema}, resolvers: IResolversParameter, prefix: string): GraphQLSchema {
+function mergeAllSchemas (schema, schemaMerged, resolvers, prefix) {
   if (_.isEmpty(schemaMerged)) {
     return schema
   }

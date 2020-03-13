@@ -1,9 +1,9 @@
 // @flow
 
-export default class RemoteSchema {
-  name:string
+module.exports = class RemoteSchema {
+  name
 
-  constructor (name:string) {
+  constructor (name) {
     this.name = name
   }
 }

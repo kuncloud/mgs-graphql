@@ -30,7 +30,7 @@ function fixIndent (str: string): string {
  * `
  * str === "{\n  test\n}\n";
  */
-export default function dedent (
+exports.dedent = function dedent (
   strings: string | Array<string>,
   ...values: Array<string>
 ): string {

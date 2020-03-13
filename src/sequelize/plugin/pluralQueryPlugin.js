@@ -1,16 +1,15 @@
 // @flow
-import * as _ from 'lodash'
-import * as graphql from 'graphql'
-import * as relay from 'graphql-relay'
-import Sequelize from 'sequelize'
-import Schema from '../../definition/Schema'
-import RemoteSchema from '../../definition/RemoteSchema'
-import Type from '../../type'
-import StringHelper from '../../utils/StringHelper'
-import resolveConnection from '../resolveConnection'
-import Transformer from '../../transformer'
-import * as helper from '../../utils/helper'
-import {mergeNQuery} from '../mergeNQuery'
+const _ = require('lodash')
+const graphql = require('graphql')
+const relay = require('graphql-relay')
+const Sequelize = require('sequelize')
+const RemoteSchema = require('../../definition/RemoteSchema')
+const Type = require('../../type')
+const StringHelper = require('../../utils/StringHelper')
+const resolveConnection = require('../resolveConnection')
+const Transformer = require('../../transformer')
+const helper = require('../../utils/helper')
+const {mergeNQuery} = require('../mergeNQuery')
 const Op = Sequelize.Op
 
 const SortEnumType = new graphql.GraphQLEnumType({
@@ -127,11 +126,11 @@ const StringConditionType = new graphql.GraphQLInputObjectType({
   }
 })
 
-const _cvtKey = (key: string): any => {
+const _cvtKey = (key) => {
   return (Op.hasOwnProperty(key)) ? Op[key] : key
 }
 
-export default function pluralQuery (schema: Schema<any>, options: any): void {
+module.exports = function pluralQuery (schema, options) {
   const name = helper.pluralQueryName(schema.name)
   const searchFields = {}
   const conditionFieldKeys = []
@@ -158,13 +157,13 @@ export default function pluralQuery (schema: Schema<any>, options: any): void {
       if (value['advancedSearchable']) {
         if (value['$type'] === Date) {
           conditionFieldKeys.push(key)
-          searchFields[key] = Object.assign({}, searchFields[key], {$type: DateConditionType})
+          searchFields[key]['$type'] = DateConditionType
         } else if (value['$type'] === Number) {
           conditionFieldKeys.push(key)
-          searchFields[key] = Object.assign({}, searchFields[key], {$type: NumberConditionType})
+          searchFields[key]['$type'] = NumberConditionType
         } else if (value['$type'] === String) {
           conditionFieldKeys.push(key)
-          searchFields[key] = Object.assign({}, searchFields[key], {$type: StringConditionType})
+          searchFields[key]['$type'] = StringConditionType
         }
       }
     }
@@ -172,7 +171,7 @@ export default function pluralQuery (schema: Schema<any>, options: any): void {
   )
 
   if (options && options.conditionArgs) {
-    Object.assign(searchFields, (options.conditionArgs:any))
+    Object.assign(searchFields, options.conditionArgs)
   }
 
   let config = {}
@@ -234,10 +233,7 @@ export default function pluralQuery (schema: Schema<any>, options: any): void {
           }
         }
       },
-      resolve: async function (args: {[argName: string]: any},
-                               context: any,
-                               info: graphql.GraphQLResolveInfo,
-                               sgContext) {
+      resolve: async function (args, context, info, sgContext) {
         const dbModel = sgContext.models[schema.name]
 
         let {sort = [{field: 'id', order: 'ASC'}], condition = {}, options} = (args != null ? args : {})
@@ -329,17 +325,14 @@ export default function pluralQuery (schema: Schema<any>, options: any): void {
           }
 
           if (!_.isEmpty(options.group)) {
-            args = {
-              ...args,
-              group: options.group
-            }
+            args.group = options.group
           }
         }
 
         const include = []
         const includeFields = {}
 
-        const associationType = (model, fieldName): ?string => {
+        const associationType = (model, fieldName) => {
           if (model.config.associations.hasOne[fieldName]) {
             return model.config.associations.hasOne[fieldName].target
           }
@@ -427,8 +420,9 @@ export default function pluralQuery (schema: Schema<any>, options: any): void {
           }
           condition[Op.or] = keywordsCondition
         }
-
-        let res = await resolveConnection(dbModel, {...args, condition, include})
+        args.condition = condition
+        args.include = include
+        let res = await resolveConnection(dbModel, args)
         if (context.qid && res && res.edges && res.edges.length > 1) {
           await mergeNQuery(context.qid, res.edges, schema, sgContext.getTargetBinding, info, sgContext.bindings.toDbId)
         }

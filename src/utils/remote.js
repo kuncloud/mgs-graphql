@@ -1,17 +1,15 @@
 // @flow
-import {HttpLink} from 'apollo-link-http'
-import {setContext} from 'apollo-link-context'
-import {GraphQLSchema} from 'graphql'
-import type {GraphQLResolveInfo} from 'graphql'
-import {makeRemoteExecutableSchema} from 'graphql-tools'
-import fetch from 'node-fetch'
-import path from 'path'
-import fs from 'fs'
-import * as fsHelper from './fileHelper'
-import {Binding} from 'graphql-binding'
-import _ from 'lodash'
+const {HttpLink} = require('apollo-link-http')
+const {setContext} = require('apollo-link-context')
+const {makeRemoteExecutableSchema} = require('graphql-tools')
+const fetch = require('node-fetch')
+const path = require('path')
+const fs = require('fs')
+const fsHelper = require('./fileHelper')
+const {Binding} = require('graphql-binding')
+const _ = require('lodash')
 
-const protocol: string = 'http'
+const protocol = 'http'
 
 // async function remoteSchemasFromURI(endPoint: String): GraphQLSchema {
 //   console.log('remoteSchemasFromURI call:', endPoint)
@@ -25,7 +23,7 @@ const protocol: string = 'http'
 //   return schema
 // }
 
-function remoteSchemasFromFile (endPoint: string, gqlFile: string, headerKeys = []): GraphQLSchema {
+function remoteSchemasFromFile (endPoint, gqlFile, headerKeys = []) {
   // console.log('remoteSchemasFromFile call:', endPoint, gqlFile, __dirname)
   if (!gqlFile.endsWith('.gql')) { throw new Error('Must postfix with .gql') }
 
@@ -34,10 +32,10 @@ function remoteSchemasFromFile (endPoint: string, gqlFile: string, headerKeys = 
     console.warn('gql file add current path ', gqlFile)
   }
 
-  const gql: string = fs.readFileSync(gqlFile, {flag: 'r+', encoding: 'utf-8'})
+  const gql = fs.readFileSync(gqlFile, {flag: 'r+', encoding: 'utf-8'})
   // console.log(gql)
-  const link: HttpLink = new HttpLink({uri: endPoint, fetch})
-  const withToken: HttpLink = setContext(
+  const link = new HttpLink({uri: endPoint, fetch})
+  const withToken = setContext(
     (req, {graphqlContext}) => {
       const headers = {}
       if (graphqlContext) {
@@ -50,7 +48,7 @@ function remoteSchemasFromFile (endPoint: string, gqlFile: string, headerKeys = 
     }
   )
 
-  const schema: GraphQLSchema = makeRemoteExecutableSchema({
+  const schema = makeRemoteExecutableSchema({
     schema: gql,
     link: withToken.concat(link)
   })
@@ -58,30 +56,16 @@ function remoteSchemasFromFile (endPoint: string, gqlFile: string, headerKeys = 
   return schema
 }
 
-function endPoint ({host, port, path}:{host:string, port:string, path:string}): string {
+function endPoint ({host, port, path}) {
   return `${protocol}://${host}:${port}/${path}`
 }
 
 class MyBinding extends Binding {
-  constructor (schema: GraphQLSchema) {
+  constructor (schema) {
     super({
       schema: schema
     })
   }
-}
-
-export type RemoteConfig = {
-  [key:string]:{
-    uri:{
-      host: string,
-      port: string,
-      path: string
-    },
-    gql?:{
-      path: string
-    }
-  },
-  // __proto__: null
 }
 
 // const EndPoints = {
@@ -96,7 +80,7 @@ export type RemoteConfig = {
 //     }
 //   }
 // }
-export function buildBindings (cfg: RemoteConfig, ext: Object): {[key:string]:any} {
+exports.buildBindings = function buildBindings (cfg, ext) {
   if (_.isEmpty(cfg)) { return {} }
 
   const binding = {}
@@ -108,18 +92,20 @@ export function buildBindings (cfg: RemoteConfig, ext: Object): {[key:string]:an
     // console.log('binding cfg:',key,value)
     const schema = remoteSchemasFromFile(endPoint(value.uri), value.gql.path, headerKeys)
     // const schema = await remoteSchemasFromURI(endPoint(value.uri))
-    binding['schema'] = {
-      ...binding['schema'],
-      [key]: schema
+
+    if (!binding['schema']) {
+      binding['schema'] = {}
     }
+    binding['schema'][key] = schema
+
+    // binding['schema'] = {
+    //   ...binding['schema'],
+    //   [key]: schema
+    // }
 
     const b = new MyBinding(schema)
     _.forOwn(b.mutation, (resolve, field) => {
-      b.mutation[field] = (args?: {
-        [key: string]: any;
-      }, context?: {
-        [key: string]: any;
-      }, info?: GraphQLResolveInfo | string) => {
+      b.mutation[field] = (args, context, info) => {
         if (args) {
           if (args.input) {
             if (!args.input.clientMutationId) { args.input.clientMutationId = Date.now().toString() }
@@ -133,10 +119,16 @@ export function buildBindings (cfg: RemoteConfig, ext: Object): {[key:string]:an
       }
     })
 
-    binding['binding'] = {
-      ...binding['binding'],
-      [key]: b
+    if (!binding['binding']) {
+      binding['binding'] = {}
     }
+
+    binding['binding'][key] = b
+
+    // binding['binding'] = {
+    //   ...binding['binding'],
+    //   [key]: b
+    // }
   })
 
   return binding

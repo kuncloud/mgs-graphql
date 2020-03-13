@@ -1,10 +1,10 @@
 // @flow
-import SG from '../../../../'
+const SG = require('../../../../')
 
 const UserType = 'User'
 const TodoType = 'Todo'
 
-export default SG.schema('Todo').fields({
+module.exports = SG.schema('Todo').fields({
   owner: {
     $type: UserType,
     required: true

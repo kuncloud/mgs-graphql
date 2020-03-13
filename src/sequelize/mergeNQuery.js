@@ -1,18 +1,16 @@
 /**
  * Created by yuyanq on 2018/9/13.
  */
-import * as _ from 'lodash'
-import * as graphql from 'graphql'
-import Schema from '../definition/Schema'
-import RemoteSchema from '../definition/RemoteSchema'
-import * as helper from '../utils/helper'
-import invariant from '../utils/invariant'
-import type {FieldType} from '../Definition'
-import * as relay from 'graphql-relay'
+const _ = require('lodash')
+const graphql = require('graphql')
+const RemoteSchema = require('../definition/RemoteSchema')
+const helper = require('../utils/helper')
+const invariant = require('../utils/invariant')
+const relay = require('graphql-relay')
 
 const _deadTimeLine = 3 * 60 * 1000 // 3 minute
 const _numberOneSession = 20 // 每次清理的个数
-const _mergeNQueryBulk:{[id:string]:any} = {}
+const _mergeNQueryBulk = {}
 function cleanNQuery () {
   let counter = 0
   const now = Date.now()
@@ -27,20 +25,12 @@ function cleanNQuery () {
   }
 }
 
-export async function mergeNQuery (qid: string,
-                                  edges: Array<{
-                                    node:any,
-                                    cursor:string|number
-                                  }>,
-                                  schema: Schema<any>,
-                                  getTargetBinding: (modeName: string) => ?any,
-                                  info: graphql.GraphQLResolveInfo,
-                                  toDbId: Function): ?any {
+async function mergeNQuery (qid, edges, schema, getTargetBinding, info, toDbId) {
   if (!edges || edges.length <= 1) {
     return
   }
 
-  const findSelectionNode = (field: graphql.SelectionSetNode, findName: string, isDeep: boolean): ?graphql.SelectionSetNode => {
+  const findSelectionNode = (field, findName, isDeep) => {
     // console.log('findSelectionNode field:', findName, graphql.print(field))
     if (!field) { return null }
 
@@ -68,7 +58,7 @@ export async function mergeNQuery (qid: string,
     if (!value || !(value.$type instanceof RemoteSchema)) continue
 
     if (!node) { // lazy fetch node
-      const findNode = (info):?graphql.SelectionSetNode => {
+      const findNode = (info) => {
         const {fieldNodes = []} = info
         const nodeName = 'node'
         let node = null
@@ -88,7 +78,7 @@ export async function mergeNQuery (qid: string,
     }
 
     // console.log('mergeNQuery:createNQuery',key,value)
-    const createMergeNQuery = async(key: string, value: FieldType): ?void => {
+    const createMergeNQuery = async(key, value) => {
       const linkId = helper.formatLinkId(key)
       invariant(linkId, `schema ${schema.name}: ${linkId} is null`)
       const targetModelName = value['$type'].name
@@ -101,7 +91,7 @@ export async function mergeNQuery (qid: string,
         return
       }
 
-      const findCurrNodeOnlyInSub = (parent: graphql.SelectionSetNode, key:string): ?graphql.SelectionSetNode => {
+      const findCurrNodeOnlyInSub = (parent, key) => {
         let curr = null
         const selections = parent.selectionSet && parent.selectionSet.selections
         if (selections) {
@@ -174,7 +164,7 @@ export async function mergeNQuery (qid: string,
         }
       }
 
-      queryContext.fn = (targetName:string, id:number, qContext:{[id:string]:any}) => {
+      queryContext.fn = (targetName, id, qContext) => {
         id = toDbId(targetName, id)
         try {
           id = parseInt(id)

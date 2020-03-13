@@ -1,12 +1,9 @@
 // @flow
-import _ from 'lodash'
+const _ = require('lodash')
 
-import Schema from '../../definition/Schema'
-import StringHelper from '../../utils/StringHelper'
+const StringHelper = require('../../utils/StringHelper')
 
-export default function hasOneFieldsConfig (schema:Schema<any>, options:any):void {
-  // Conver model association to field config
-
+module.exports = function hasOneFieldsConfig (schema, options) {
   _.forOwn(schema.config.associations.hasOne, (config, key) => {
     if (config.hidden) {
       return

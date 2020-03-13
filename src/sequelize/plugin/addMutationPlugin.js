@@ -1,13 +1,11 @@
 // @flow
-import _ from 'lodash'
-import * as graphql from 'graphql'
+const _ = require('lodash')
 
-import Schema from '../../definition/Schema'
-import StringHelper from '../../utils/StringHelper'
-import RemoteSchema from '../../definition/RemoteSchema'
-import { validateType } from '../../utils/helper'
+const StringHelper = require('../../utils/StringHelper')
+const RemoteSchema = require('../../definition/RemoteSchema')
+const { validateType } = require('../../utils/helper')
 
-export default function addMutation (schema:Schema<any>, options:any):void {
+module.exports = function addMutation (schema, options) {
   const name = 'add' + StringHelper.toInitialUpperCase(schema.name)
   const addedName = 'added' + StringHelper.toInitialUpperCase(schema.name) + 'Edge'
 
@@ -37,7 +35,7 @@ export default function addMutation (schema:Schema<any>, options:any):void {
       outputFields: {
         [addedName]: schema.name + 'Edge'
       },
-      mutateAndGetPayload: async function (args:any, context:any, info:graphql.GraphQLResolveInfo, sgContext) {
+      mutateAndGetPayload: async function (args, context, info, sgContext) {
         const dbModel = sgContext.models[schema.name]
         const attrs = {}
 

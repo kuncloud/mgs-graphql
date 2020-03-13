@@ -1,9 +1,9 @@
 // @flow
-import {convert, toGraphQLInputFieldMap} from './toGraphQLInputFieldMap'
-import toGraphQLFieldConfig from './toGraphQLFieldConfig'
-import mutationWithClientMutationId from './mutationWithClientMutationId'
+const {convert, toGraphQLInputFieldMap} = require('./toGraphQLInputFieldMap')
+const toGraphQLFieldConfig = require('./toGraphQLFieldConfig')
+const mutationWithClientMutationId = require('./mutationWithClientMutationId')
 
-export default{
+module.exports = {
   convert: convert,
   toGraphQLInputFieldMap: toGraphQLInputFieldMap,
   toGraphQLFieldConfig: toGraphQLFieldConfig,

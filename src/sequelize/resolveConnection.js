@@ -1,27 +1,5 @@
 // @flow
-import Sequelize from 'sequelize'
-export default async function resolveConnection (dbModel:Sequelize.Model, args:{
-  after?: string,
-  first?: number,
-  before?: string,
-  last?: number,
-  include?:Array<any>,
-  condition?:any,
-  group?: any,
-  sort?: Array<{field: string, order: "ASC"|"DESC"}>
-}):Promise<{
-  pageInfo: {
-    startCursor:string|number,
-    endCursor:string|number,
-    hasPreviousPage: boolean,
-    hasNextPage: boolean
-  },
-  edges: Array<{
-    node:any,
-    cursor:string|number
-  }>,
-  count: number
-}> {
+module.exports = async function resolveConnection (dbModel, args) {
   let {after, first = 100, before, last, group, include = [], condition = {}, sort = [{
     field: 'id',
     order: 'ASC'
@@ -53,10 +31,7 @@ export default async function resolveConnection (dbModel:Sequelize.Model, args:{
     offset: offset
   }
   if (group) {
-    sequelizeOptions = {
-      ...sequelizeOptions,
-      group
-    }
+    sequelizeOptions.group = group
   }
 
   const result = await dbModel.findAll(sequelizeOptions)

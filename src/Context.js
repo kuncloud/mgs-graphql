@@ -1,104 +1,60 @@
 // @flow
-import Sequelize from 'sequelize'
-import * as relay from 'graphql-relay'
-import _ from 'lodash'
-import {
-  GraphQLSchema,
-  GraphQLInterfaceType,
+const Sequelize = require('sequelize')
+const relay = require('graphql-relay')
+const _ = require('lodash')
+const {
   GraphQLObjectType,
   GraphQLNonNull,
   GraphQLFloat,
   GraphQLID,
   GraphQLString,
   responsePathAsArray
-} from 'graphql'
-import type {GraphQLResolveInfo} from 'graphql'
-import camelcase from 'camelcase'
-import DataLoader from 'dataloader'
-import parseFields from 'graphql-parse-fields'
+} = require('graphql')
+const camelcase = require('camelcase')
+const DataLoader = require('dataloader')
+const parseFields = require('graphql-parse-fields')
 
-import Schema from './definition/Schema'
-import Service from './definition/Service'
-import StringHelper from './utils/StringHelper'
-import invariant from './utils/invariant'
-import Transformer from './transformer'
-import type {IResolversParameter, MergeInfo} from 'graphql-tools'
-import {mergeNQueryBulk} from './sequelize/mergeNQuery'
-import SequelizeContext from './sequelize/SequelizeContext'
-import type {SGContext, LinkedFieldType, ArgsType, BuildOptionConfig} from './Definition'
-import type {RemoteConfig} from './utils/remote'
-import {buildBindings} from './utils/remote'
-import * as helper from './utils/helper'
+const StringHelper = require('./utils/StringHelper')
+const invariant = require('./utils/invariant')
+const Transformer = require('./transformer')
+const {mergeNQueryBulk} = require('./sequelize/mergeNQuery')
+const SequelizeContext = require('./sequelize/SequelizeContext')
+const {buildBindings} = require('./utils/remote')
+const helper = require('./utils/helper')
 
-export type QueryConfig ={
-  name:string,
-  $type:LinkedFieldType,
-  description?:string,
-  args?:ArgsType,
-  resolve: (args: {[argName: string]: any},
-            context: any,
-            info: GraphQLResolveInfo,
-            sgContext: SGContext) => any
-}
+module.exports = class Context {
+  dbContext
 
-export type MutationConfig ={
-  name:string,
-  description?:string,
-  inputFields:ArgsType,
-  outputFields:{[string]:LinkedFieldType},
-  mutateAndGetPayload:(args: {[argName: string]: any},
-                       context: any,
-                       info: GraphQLResolveInfo,
-                       sgContext: SGContext) => any
-}
+  options
 
-export type SubscriptionConfig ={
-  name:string,
-  $type:LinkedFieldType,
-  description?:string,
-  args?:ArgsType,
-  subscribe: any,
-  resolve: (root: any,
-            args: {[argName: string]: any},
-            context: any,
-            info: GraphQLResolveInfo,
-            sgContext: SGContext) => any
-}
+  dbModels
 
-export default class Context {
-  dbContext: SequelizeContext
+  nodeInterface
 
-  options: BuildOptionConfig
+  schemas
+  loaders
 
-  dbModels: {[id:string]:Sequelize.Model}
+  remoteLoader
 
-  nodeInterface: GraphQLInterfaceType
+  services
 
-  schemas: {[id:string]: Schema<any>}
+  graphQLObjectTypes
 
-  loaders: {[id:string]: DataLoader<any, *>}
+  queries
 
-  remoteLoader: DataLoader<any, *> | null
+  mutations
 
-  services: {[id:string]: Service<any>}
+  subscriptions
 
-  graphQLObjectTypes: {[id:string]: GraphQLObjectType}
+  connectionDefinitions
 
-  queries: {[id:string]:QueryConfig}
+  resolvers
 
-  mutations: {[id:string]:MutationConfig}
+  remotePrefix
 
-  subscriptions: {[id:string]:SubscriptionConfig}
+  remoteInfo
 
-  connectionDefinitions: {[id:string]:{connectionType:GraphQLObjectType, edgeType:GraphQLObjectType}}
-
-  resolvers: IResolversParameter
-
-  remotePrefix: string
-
-  remoteInfo: {[id:string]:any}
-
-  constructor (sequelize: Sequelize, options: BuildOptionConfig, remoteCfg: RemoteConfig) {
+  constructor (sequelize, options, remoteCfg) {
     this.dbContext = new SequelizeContext(sequelize)
     this.options = {
       dataLoader: true,
@@ -114,6 +70,7 @@ export default class Context {
     this.mutations = {}
     this.subscriptions = {}
     this.loaders = {}
+    this.schemasFieldsAndLinks = {}
 
     this.connectionDefinitions = {}
 
@@ -137,44 +94,54 @@ export default class Context {
     this.remoteLoader = this.options.remoteLoader !== false ? this.initRemoteLoader() : null
   }
 
-  getSGContext () {
-    return {
-      sequelize: this.dbContext.sequelize,
-      loaders: this.loaders,
-      remoteLoader: this.remoteLoader,
-      dataLoader: this.options.dataLoader,
-      models: _.mapValues(this.schemas, (schema) => this.dbModel(schema.name)),
-      services: _.mapValues(this.services, (service) => service.config.statics),
-      bindings: {
-        toGId: (type, id) => relay.toGlobalId(type, id),
-        toDbId: (type, id) => {
-          const gid = relay.fromGlobalId(id)
-          if (gid.type !== type) {
-            throw new Error(`错误的global id,type:${type},gid:${id}`)
-          }
-          return gid.id
+  getSGContext = (function () {
+    let unique
+    function getInstance() {
+      if (!unique) {
+        unique = SGContext(this)
+      }
+      return unique
+    }
+    function SGContext(self) {
+      return {
+        sequelize: self.dbContext.sequelize,
+        loaders: self.loaders,
+        remoteLoader: self.remoteLoader,
+        dataLoader: self.options.dataLoader,
+        models: _.mapValues(self.schemas, (schema) => self.dbModel(schema.name)),
+        services: _.mapValues(self.services, (service) => service.config.statics),
+        bindings: {
+          toGId: (type, id) => relay.toGlobalId(type, id),
+          toDbId: (type, id) => {
+            const gid = relay.fromGlobalId(id)
+            if (gid.type !== type) {
+              throw new Error(`错误的global id,type:${type},gid:${id}`)
+            }
+            return gid.id
+          },
+          ...self.remoteInfo['binding']
         },
-        ...this.remoteInfo['binding']
-      },
-      getTargetBinding: (modeName: string): ?any => {
-        if (!this.remoteInfo['schema']) {
-          return
-        }
-
-        let target
-        _.forOwn(this.remoteInfo['schema'], (value, key) => {
-          if (value && value.getType(modeName)) {
-            target = key
-            return false
+        getTargetBinding: (modeName) => {
+          if (!self.remoteInfo['schema']) {
+            return
           }
-        })
 
-        return target ? this.remoteInfo['binding'][target] : null
+          let target
+          _.forOwn(self.remoteInfo['schema'], (value, key) => {
+            if (value && value.getType(modeName)) {
+              target = key
+              return false
+            }
+          })
+
+          return target ? self.remoteInfo['binding'][target] : null
+        }
       }
     }
-  }
+    return getInstance
+  })()
 
-  getTargetSchema (modeName: string): ?GraphQLSchema {
+  getTargetSchema (modeName) {
     if (!this.remoteInfo['schema']) {
       return
     }
@@ -203,7 +170,7 @@ export default class Context {
     return target.schema
   }
 
-  addRemoteResolver (schemaName: string, fieldName: string, linkId: string, target: string) {
+  addRemoteResolver (schemaName, fieldName, linkId, target) {
     if (!this.resolvers[schemaName]) {
       this.resolvers[schemaName] = {}
     }
@@ -290,7 +257,7 @@ export default class Context {
     }
   }
 
-  addSchema (schema: Schema<any>) {
+  addSchema (schema) {
     if (this.schemas[schema.name]) {
       throw new Error('Schema ' + schema.name + ' already define.')
     }
@@ -357,7 +324,7 @@ export default class Context {
     if (this.options.dataLoader !== false) this.loaders[schema.name] = this.initLoader(schema.name)
   }
 
-  addService (service: Service<any>) {
+  addService (service) {
     const self = this
     if (self.services[service.name]) {
       throw new Error('Service ' + service.name + ' already define.')
@@ -385,28 +352,28 @@ export default class Context {
     })
   }
 
-  addQuery (config: QueryConfig) {
+  addQuery (config) {
     if (this.queries[config.name]) {
       throw new Error('Query ' + config.name + ' already define.')
     }
     this.queries[config.name] = config
   }
 
-  addMutation (config: MutationConfig) {
+  addMutation (config) {
     if (this.mutations[config.name]) {
       throw new Error('Mutation ' + config.name + ' already define.')
     }
     this.mutations[config.name] = config
   }
 
-  addSubscription (config: SubscriptionConfig) {
+  addSubscription (config) {
     if (this.subscriptions[config.name]) {
       throw new Error('Subscription ' + config.name + ' already define.')
     }
     this.subscriptions[config.name] = config
   }
 
-  remoteGraphQLObjectType (name: string): GraphQLObjectType {
+  remoteGraphQLObjectType (name) {
     // console.log('Context.remoteGraphQLObjectType',name)
     const typeName = this.remotePrefix + name
     if (!this.graphQLObjectTypes[typeName]) {
@@ -425,13 +392,31 @@ export default class Context {
         })
       })
       this.graphQLObjectTypes[typeName] = objectType
-    } else {
-
     }
     return this.graphQLObjectTypes[typeName]
   }
 
-  graphQLObjectType (name: string): GraphQLObjectType {
+  getFieldsAndLinks (model, name) {
+
+    const schemaFieldsAndLinks = this.schemasFieldsAndLinks[name]
+    if (schemaFieldsAndLinks) {
+      return schemaFieldsAndLinks
+    }
+
+    const obj = {}
+    Object.assign(obj, model.config.fields, model.config.links)
+    obj.id = {
+      $type: new GraphQLNonNull(GraphQLID),
+      resolve: async function (root) {
+        return relay.toGlobalId(StringHelper.toInitialUpperCase(model.name), root.id)
+      }
+    }
+    this.schemasFieldsAndLinks[name] = obj
+    return obj
+
+  }
+
+  graphQLObjectType (name) {
     const model = this.schemas[name]
     if (!model) {
       throw new Error('Schema ' + name + ' not define.')
@@ -441,17 +426,8 @@ export default class Context {
     const typeName = name
 
     if (!this.graphQLObjectTypes[typeName]) {
-      const obj = Object.assign({
-        id: {}
-      }, model.config.fields, model.config.links)
-      obj.id = {
-        $type: new GraphQLNonNull(GraphQLID),
-        resolve: async function (root) {
-          return relay.toGlobalId(StringHelper.toInitialUpperCase(model.name), root.id)
-        }
-      }
       const interfaces = [this.nodeInterface]
-      const objectType = Transformer.toGraphQLFieldConfig(typeName, '', obj, this, interfaces, true).type
+      const objectType = Transformer.toGraphQLFieldConfig(typeName, '', this.getFieldsAndLinks(model, name), this, interfaces, true).type
       if (objectType instanceof GraphQLObjectType) {
         objectType.description = model.config.options.description
         this.graphQLObjectTypes[typeName] = objectType
@@ -462,7 +438,7 @@ export default class Context {
     return this.graphQLObjectTypes[typeName]
   }
 
-  dbModel (name: string): Sequelize.Model {
+  dbModel (name) {
     const model = this.schemas[name]
     if (!model) {
       throw new Error('Schema ' + name + ' not define.')
@@ -471,21 +447,20 @@ export default class Context {
     const self = this
     if (!self.dbModels[typeName]) {
       self.dbModels[typeName] = self.dbContext.define(model)
-      Object.assign(self.dbModels[typeName], {
-        ...model.config.statics,
-        getSGContext: () => self.getSGContext()
+
+      Object.assign(self.dbModels[typeName], model.config.statics, {
+        getSGContext: self.getSGContext()
       })
-      Object.assign(self.dbModels[typeName].prototype, {
-        ...model.config.methods,
-        getSGContext: () => self.getSGContext()
+      Object.assign(self.dbModels[typeName].prototype, model.config.methods, {
+        getSGContext: self.getSGContext()
       })
     }
     return self.dbModels[typeName]
   }
 
-  initLoader (name: string): DataLoader<any, *> {
+  initLoader (name) {
     const model = this.dbModels[name]
-    return new DataLoader(async(ids: any) => {
+    return new DataLoader(async(ids) => {
       const lists = await model.findAll({
         where: {
           id: {
@@ -508,7 +483,7 @@ export default class Context {
    * 当一个请求有多个remote时，分别组织参数
    * @param options
    */
-  parseRemoteTarget (options?: any): {[key: string]: {ids: [string], info: any, parsedInfo: {[key: string]: any}}} {
+  parseRemoteTarget (options) {
     const targets = {}
     const self = this
 
@@ -536,17 +511,17 @@ export default class Context {
   }
 
   // 将所有同类型的字段合并，防止一个请求取同类型不同字段出现报错。如{id, name} {id, code}
-  analysisInfo (parsed: {[key: string]: any}, newInfo: any): {[key: string]: any} {
+  analysisInfo (parsed, newInfo) {
     const newParsed = parseFields(newInfo)
     return _.merge(parsed, newParsed)
   }
 
   // 对id做简单处理，防止一个请求中clinic{id}和getClinic{id, name}匹配错乱问题
-  encryptId (id: string, target: string): string {
+  encryptId (id, target) {
     return `${id}-${target}`
   }
 
-  initRemoteLoader (): DataLoader<any, *> | null {
+  initRemoteLoader () {
     const self = this
     return new DataLoader(async(options) => {
       const targets = self.parseRemoteTarget(options)
@@ -594,7 +569,7 @@ export default class Context {
     })
   }
 
-  wrapQueryResolve (config: QueryConfig): any {
+  wrapQueryResolve (config) {
     const self = this
     const {handleError} = this.options
 
@@ -635,7 +610,7 @@ export default class Context {
     )
   }
 
-  wrapSubscriptionResolve (config: SubscriptionConfig): any {
+  wrapSubscriptionResolve (config) {
     const self = this
 
     const {handleError} = this.options
@@ -677,17 +652,7 @@ export default class Context {
     )
   }
 
-  wrapFieldResolve (config: {
-    name:string,
-    $type:LinkedFieldType,
-    description?:string,
-    args?:ArgsType,
-    resolve: (source: any,
-              args: {[argName: string]: any},
-              context: any,
-              info: GraphQLResolveInfo & {mergeInfo: MergeInfo},
-              sgContext: SGContext) => any
-  }): any {
+  wrapFieldResolve (config) {
     const self = this
 
     let hookFun = (action, invokeInfo, next) => next()
@@ -714,7 +679,7 @@ export default class Context {
     )
   }
 
-  wrapMutateAndGetPayload (config: MutationConfig): any {
+  wrapMutateAndGetPayload (config) {
     const self = this
 
     const {handleError} = this.options
@@ -753,7 +718,7 @@ export default class Context {
     )
   }
 
-  connectionDefinition (schemaName: string): {connectionType:GraphQLObjectType, edgeType:GraphQLObjectType} {
+  connectionDefinition (schemaName) {
     if (!this.connectionDefinitions[schemaName]) {
       this.connectionDefinitions[schemaName] = relay.connectionDefinitions({
         name: StringHelper.toInitialUpperCase(schemaName),
@@ -768,56 +733,44 @@ export default class Context {
     return this.connectionDefinitions[schemaName]
   }
 
-  connectionType (schemaName: string): GraphQLObjectType {
+  connectionType (schemaName) {
     return this.connectionDefinition(schemaName).connectionType
   }
 
-  edgeType (schemaName: string): GraphQLObjectType {
+  edgeType (schemaName) {
     return this.connectionDefinition(schemaName).edgeType
   }
 
-  buildModelAssociations (): void {
+  buildModelAssociations () {
     const self = this
     _.forOwn(self.schemas, (schema) => {
       _.forOwn(schema.config.associations.hasMany, (config, key) => {
-        let d = {
-          ...config,
-          as: key,
-          foreignKey: {
-            name: camelcase(config.foreignKey || config.foreignField + 'Id'),
-            field: config.foreignKey || config.foreignField + 'Id'
-          },
-          through: undefined
+        config.foreignKey = {
+          name: camelcase(config.foreignKey || config.foreignField + 'Id'),
+          field: config.foreignKey || config.foreignField + 'Id'
         }
-        self.dbModel(schema.name).hasMany(self.dbModel(config.target), d)
+        config.as = key
+        self.dbModel(schema.name).hasMany(self.dbModel(config.target), config)
       })
-
       _.forOwn(schema.config.associations.belongsToMany, (config, key) => {
-        self.dbModel(schema.name).belongsToMany(self.dbModel(config.target), {
-          ...config,
-          as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id',
-          through: config.through && {...config.through, model: self.dbModel(config.through.model)}
-        })
-      })
+        config.through && (config.through.model = self.dbModel(config.through.model))
+        config.as = key
+        config.foreignKey = config.foreignKey || config.foreignField + 'Id'
 
+        self.dbModel(schema.name).belongsToMany(self.dbModel(config.target), config)
+      })
       _.forOwn(schema.config.associations.hasOne, (config, key) => {
-        self.dbModel(schema.name).hasOne(self.dbModel(config.target), {
-          ...config,
-          as: key,
-          foreignKey: {
-            name: camelcase(config.foreignKey || config.foreignField + 'Id'),
-            field: config.foreignKey || config.foreignField + 'Id'
-          }
-        })
+        config.as = key
+        config.foreignKey = {
+          name: camelcase(config.foreignKey || config.foreignField + 'Id'),
+          field: config.foreignKey || config.foreignField + 'Id'
+        }
+        self.dbModel(schema.name).hasOne(self.dbModel(config.target), config)
       })
-
       _.forOwn(schema.config.associations.belongsTo, (config, key) => {
-        self.dbModel(schema.name).belongsTo(self.dbModel(config.target), {
-          ...config,
-          as: key,
-          foreignKey: config.foreignKey || config.foreignField + 'Id'
-        })
+        config.as = key
+        config.foreignKey = config.foreignKey || config.foreignField + 'Id'
+        self.dbModel(schema.name).belongsTo(self.dbModel(config.target), config)
       })
     })
   }

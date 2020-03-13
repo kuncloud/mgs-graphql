@@ -1,5 +1,5 @@
 // @flow
-import buildSchema from './buildSchema'
-import sequelize from './sequelize'
+const buildSchema = require('./buildSchema')
+const sequelize = require('./sequelize')
 
-export default buildSchema(sequelize).graphQLSchema
+module.exports = buildSchema(sequelize).graphQLSchema

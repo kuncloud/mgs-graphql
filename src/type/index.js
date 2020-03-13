@@ -1,11 +1,11 @@
 // @flow
-import Sequelize from 'sequelize'
-import {GraphQLID, GraphQLString, GraphQLFloat, GraphQLInt, GraphQLBoolean} from 'graphql'
+const Sequelize = require('sequelize')
+const {GraphQLID, GraphQLString, GraphQLFloat, GraphQLInt, GraphQLBoolean} = require('graphql')
 
-import GraphQLScalarTypes from './graphql'
-import ScalarFieldType from './ScalarFieldType'
+const GraphQLScalarTypes = require('./graphql')
+const ScalarFieldType = require('./ScalarFieldType')
 
-export default{
+module.exports = {
   GraphQLScalarTypes: GraphQLScalarTypes,
   ScalarFieldType: ScalarFieldType,
 
@@ -52,5 +52,5 @@ export default{
       graphQLOutputType: GraphQLScalarTypes.Json,
       columnType: Sequelize.JSON
     })
-  } : {[id:string]:ScalarFieldType})
+  })
 }

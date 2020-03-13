@@ -1,16 +1,16 @@
 // @flow
-import {graphql} from 'graphql'
-import schema from './schema'
-export default class GraphQLExec {
-  rootValue:any
-  context:any
+const {graphql} = require('graphql')
+const schema = require('./schema')
+module.exports = class GraphQLExec {
+  rootValue
+  context
 
   constructor (context:Object = {}) {
     this.rootValue = {}
     this.context = context
   }
 
-  async exec (query:string, variables?:any = {}) {
+  async exec (query, variables = {}) {
     return graphql(schema, query, this.rootValue, this.context, variables)
   }
 }

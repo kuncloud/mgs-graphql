@@ -1,13 +1,11 @@
 // @flow
-import _ from 'lodash'
-import * as graphql from 'graphql'
+const _ = require('lodash')
 
-import Schema from '../../definition/Schema'
-import StringHelper from '../../utils/StringHelper'
-import RemoteSchema from '../../definition/RemoteSchema'
-import { validateType } from '../../utils/helper'
+const StringHelper = require('../../utils/StringHelper')
+const RemoteSchema = require('../../definition/RemoteSchema')
+const { validateType } = require('../../utils/helper')
 
-export default function updateMutation (schema:Schema<any>, options:any):void {
+module.exports = function updateMutation (schema, options) {
   const name = 'update' + StringHelper.toInitialUpperCase(schema.name)
   const changedName = 'changed' + StringHelper.toInitialUpperCase(schema.name)
 
@@ -45,7 +43,7 @@ export default function updateMutation (schema:Schema<any>, options:any):void {
       outputFields: {
         [changedName]: schema.name
       },
-      mutateAndGetPayload: async function (args, context:any, info:graphql.GraphQLResolveInfo, sgContext) {
+      mutateAndGetPayload: async function (args, context, info, sgContext) {
         if (args == null || args.values == null) {
           throw new Error('Missing update values.')
         }

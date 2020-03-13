@@ -1,7 +1,7 @@
 // @flow
-import SG from '../../../../'
+const SG = require('../../../../')
 
-export default SG.schema('User', {
+module.exports = SG.schema('User', {
   description: '用户',
   plugin: {
     addMutation: true,

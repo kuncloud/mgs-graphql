@@ -1,8 +1,8 @@
 // @flow
 
-import {GraphQLScalarType, GraphQLError, Kind} from 'graphql'
+const {GraphQLScalarType, GraphQLError, Kind} = require('graphql')
 
-export default new GraphQLScalarType({
+module.exports = new GraphQLScalarType({
   name: 'Buffer',
   description: 'Base64 encoding of Buffer data',
 

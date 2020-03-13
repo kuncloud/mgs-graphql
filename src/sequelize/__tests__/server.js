@@ -1,27 +1,40 @@
 // @flow
-import express from 'express'
-import graphqlHTTP from 'express-graphql'
+// const express = require('express')
+// const fastify = require('fastify')
+// const graphqlHTTP = require('express-graphql')
+//
+const schema = require('./schema')
+// const sequelize = require('./sequelize')
+// const initData = require('./data')
 
-import schema from './schema'
-import sequelize from './sequelize'
-import initData from './data'
-
-async function startServer () {
-  await sequelize.sync({
-    force: true,
-    logging: console.log
-  })
-  await initData(sequelize)
-
-  const app = express()
-
-  app.use('/graphql', graphqlHTTP({
-    schema: schema,
-    graphiql: true
-  }))
-
-  // console.log('GraphQL Server is now running on http://localhost:4000')
-  app.listen(4000)
-}
-
-startServer().then(() => null, (err) => console.log('Init GraphQL Server Fail', err))
+// async function startServer () {
+//   await sequelize.sync({
+//     force: false,
+//     logging: console.log
+//   })
+//   // await initData(sequelize)
+//
+//   const app = express()
+//
+//   app.use('/graphql', graphqlHTTP({
+//     schema,
+//     graphiql: true
+//   }))
+//
+//   // console.log('GraphQL Server is now running on http://localhost:4000')
+//   app.listen(4000)
+// }
+//
+// (async () => {
+//   try {
+//     await startServer()
+//   } catch (e) {
+//     throw e
+//   }
+// })()
+//
+// // startServer().then(() => null, (err) => console.log('Init GraphQL Server Fail', err))
+//
+// process.on('uncaughtException', (err) => {
+//   throw err
+// })

@@ -1,8 +1,8 @@
 // @flow
 
-import {GraphQLScalarType, GraphQLError, Kind} from 'graphql'
-import moment from 'moment'
-export default new GraphQLScalarType({
+const {GraphQLScalarType, GraphQLError, Kind} = require('graphql')
+const moment = require('moment')
+module.exports = new GraphQLScalarType({
   name: 'Date',
 
   serialize (value) {

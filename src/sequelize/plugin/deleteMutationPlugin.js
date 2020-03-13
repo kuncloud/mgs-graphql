@@ -1,11 +1,10 @@
 // @flow
-import * as graphql from 'graphql'
-import * as relay from 'graphql-relay'
+const graphql = require('graphql')
+const relay = require('graphql-relay')
 
-import Schema from '../../definition/Schema'
-import StringHelper from '../../utils/StringHelper'
+const StringHelper = require('../../utils/StringHelper')
 
-export default function deleteMutation (schema:Schema<any>, options:any):void {
+module.exports = function deleteMutation (schema, options) {
   const name = 'delete' + StringHelper.toInitialUpperCase(schema.name)
   let config = {}
   if ((typeof options) === 'object') {
@@ -25,7 +24,7 @@ export default function deleteMutation (schema:Schema<any>, options:any):void {
         ['deleted' + schema.name]: schema.name,
         ['deleted' + schema.name + 'Id']: graphql.GraphQLID
       },
-      mutateAndGetPayload: async function ({id}, context:any, info:graphql.GraphQLResolveInfo, sgContext) {
+      mutateAndGetPayload: async function ({id}, context, info, sgContext) {
         const entity = await sgContext.models[schema.name].findOne({where: {id: id}})
         if (entity) {
           await entity.destroy()

@@ -1,7 +1,6 @@
 // @flow
-import Sequelize from 'sequelize'
 
-export default async function (sequelize:Sequelize) {
+module.exports = async function (sequelize) {
   const User = sequelize.models['User']
   const Todo = sequelize.models['Todo']
   const UserProfile = sequelize.models['UserProfile']

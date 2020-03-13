@@ -1,8 +1,8 @@
 // @flow
-import SG from '../../../../'
+const SG = require('../../../../')
 
 const UserType = 'User'
-export default SG.schema('UserProfile', {}).fields({
+module.exports = SG.schema('UserProfile', {}).fields({
   owner: {
     $type: UserType,
     required: true

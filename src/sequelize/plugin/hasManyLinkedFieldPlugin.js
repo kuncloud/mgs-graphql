@@ -1,13 +1,11 @@
 // @flow
-import _ from 'lodash'
-import invariant from '../../utils/invariant'
-import Schema from '../../definition/Schema'
-import RemoteSchema from '../../definition/RemoteSchema'
-// import StringHelper from '../../utils/StringHelper'
+const _ = require('lodash')
+const invariant = require('../../utils/invariant')
+const RemoteSchema = require('../../definition/RemoteSchema')
 
-import resolveConnection from '../resolveConnection'
+const resolveConnection = require('../resolveConnection')
 
-export default function hasManyLinkedField (schema:Schema<any>, options:any):void {
+module.exports = function hasManyLinkedField (schema, options) {
   // const name = StringHelper.toInitialLowerCase(schema.name)
   // Conver model association to field config
   _.forOwn(schema.config.associations.hasMany, (config, key) => {
@@ -16,7 +14,7 @@ export default function hasManyLinkedField (schema:Schema<any>, options:any):voi
     }
 
     invariant(!(config.target instanceof RemoteSchema), `unsupported remote schema as has many target:${schema.name}:${key},coming soon`)
-    const args:any = {}
+    const args = {}
     if (config.conditionFields) {
       args['condition'] = config.conditionFields
     }
@@ -65,8 +63,11 @@ export default function hasManyLinkedField (schema:Schema<any>, options:any):voi
             let foreignKey = config.foreignKey || (config.foreignField + 'Id')
             condition[foreignKey] = root[sourceKey]
 
+            args.condition = condition
+            args.sort = sort
+
             // }
-            return resolveConnection(sgContext.models[config.target], {...args, condition, sort})
+            return resolveConnection(sgContext.models[config.target], args)
           }
         }
       })

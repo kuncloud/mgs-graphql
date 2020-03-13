@@ -1,6 +1,4 @@
 // @flow
-import Schema from './Schema'
+const Schema = require('./Schema')
 
-export default{
-  Schema: Schema
-}
+exports.Schema = Schema

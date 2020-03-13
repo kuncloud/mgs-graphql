@@ -1,29 +1,25 @@
 // @flow
 
-import Sequelize from 'sequelize'
-import _ from 'lodash'
-import {GraphQLSchema, GraphQLObjectType, GraphQLNonNull, GraphQLID, isNamedType, getNamedType} from 'graphql'
-import type {GraphQLFieldConfig} from 'graphql'
-import * as relay from 'graphql-relay'
-import {
+const _ = require('lodash')
+const {GraphQLSchema, GraphQLObjectType, GraphQLNonNull, GraphQLID, isNamedType, getNamedType} = require('graphql')
+const relay = require('graphql-relay')
+const {
   createResolveType,
   fieldToFieldConfig,
   recreateType,
   fieldMapToFieldConfigMap
-} from 'graphql-tools/dist/stitching/schemaRecreation'
-import invariant from './utils/invariant'
-import Schema from './definition/Schema'
-import Service from './definition/Service'
-import Type from './type'
-import Context from './Context'
-import StringHelper from './utils/StringHelper'
-import Connection from './utils/Connection'
-import Transformer from './transformer'
-import RemoteSchema from './definition/RemoteSchema'
-import type {SchemaOptionConfig, BuildOptionConfig} from './Definition'
-import {mergeAllSchemas} from './transformer/schemaVistor'
-import type {RemoteConfig} from './utils/remote'
-import iterateFile from './utils/iterateFile'
+} = require('graphql-tools/dist/stitching/schemaRecreation')
+const invariant = require('./utils/invariant')
+const Schema = require('./definition/Schema')
+const Service = require('./definition/Service')
+const Type = require('./type')
+const Context = require('./Context')
+const StringHelper = require('./utils/StringHelper')
+const Connection = require('./utils/Connection')
+const Transformer = require('./transformer')
+const RemoteSchema = require('./definition/RemoteSchema')
+const {mergeAllSchemas} = require('./transformer/schemaVistor')
+const iterateFile = require('./utils/iterateFile')
 
 const SimpleGraphQL = {
 
@@ -58,22 +54,16 @@ const SimpleGraphQL = {
    * @param name
    * @param options
    */
-  schema: <T>(name: string, options: SchemaOptionConfig = {}): Schema<T> => new Schema(name, options),
+  schema: (name, options) => new Schema(name, options),
 
-  service: <T>(name: string): Service<T> => new Service(name),
+  service: (name) => new Service(name),
 
-  remoteSchema: (name: string): RemoteSchema => new RemoteSchema(name),
+  remoteSchema: (name) => new RemoteSchema(name),
 
   /**
    * Build the GraphQL Schema
    */
-  build: (args: {
-    sequelize:Sequelize,
-    schemas?:Array<Schema<any>>,
-    services?:Array<Service<any>>,
-    options?:BuildOptionConfig,
-    remoteCfg?:RemoteConfig
-  }): {graphQLSchema:GraphQLSchema, sgContext:any} => {
+  build: (args) => {
     const {sequelize, schemas = [], services = [], options = {}, remoteCfg = {}} = args
     const context = new Context(sequelize, options, remoteCfg)
 
@@ -89,7 +79,7 @@ const SimpleGraphQL = {
 
     context.buildModelAssociations()
 
-    const finalQueries: {[fieldName: string]: GraphQLFieldConfig<any, any>} = {}
+    const finalQueries = {}
 
     _.forOwn(context.queries, (value, key) => {
       const fieldConfig = Transformer.toGraphQLFieldConfig(
@@ -204,7 +194,7 @@ const SimpleGraphQL = {
 
         finalQueries['viewer'] = {
           description: 'Default Viewer implement to include all queries.',
-          type: new GraphQLNonNull(((context.graphQLObjectTypes['Viewer']:any):GraphQLObjectType)),
+          type: new GraphQLNonNull(((context.graphQLObjectTypes['Viewer']))),
           resolve: () => {
             return {
               _type: 'Viewer',
@@ -285,7 +275,7 @@ const SimpleGraphQL = {
     const rootMutation = new GraphQLObjectType({
       name: 'Mutation',
       fields: () => {
-        const fields: {[fieldName: string]: GraphQLFieldConfig<any, any>} = {}
+        const fields = {}
         _.forOwn(context.mutations, (value, key) => {
           const inputFields = Transformer.toGraphQLInputFieldMap(StringHelper.toInitialUpperCase(key), value.inputFields)
           const outputFields = {}
@@ -511,4 +501,4 @@ const SimpleGraphQL = {
   }
 }
 
-export default SimpleGraphQL
+module.exports = SimpleGraphQL

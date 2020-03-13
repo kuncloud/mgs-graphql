@@ -1,22 +1,16 @@
 // @flow
-import Sequelize from 'sequelize'
-import cls from 'continuation-local-storage'
+const Sequelize = require('sequelize')
 
-const namespace = cls.createNamespace('my-db-namespace')
-Sequelize.useCLS(namespace)
-
-const sequelize = new Sequelize('clinic', 'tester', 'password', {
+const sequelize = new Sequelize('testmsg', 'root', 'rootoop', {
   host: 'localhost',
-  dialect: 'sqlite',
-
+  dialect: 'mysql',
+  port: 3306,
   pool: {
     max: 5,
     min: 0,
     idle: 10000
   },
-  // SQLite only
-  storage: ':memory:',
   logging: false
 })
 
-export default sequelize
+module.exports = sequelize

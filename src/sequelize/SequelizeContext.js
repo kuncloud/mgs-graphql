@@ -1,18 +1,15 @@
 // @flow
-import _ from 'lodash'
-import Sequelize from 'sequelize'
+const _ = require('lodash')
 
-import Schema from '../definition/Schema'
+const toSequelizeModel = require('./toSequelizeModel.js')
+const plugin = require('./plugin')
 
-import toSequelizeModel from './toSequelizeModel.js'
-import plugin from './plugin'
+module.exports = class SequelizeContext {
+  sequelize
 
-export default class SequelizeContext {
-  sequelize:Sequelize
+  plugins
 
-  plugins:{[string]:(Schema<any>, any)=>void}
-
-  constructor (sequelize:Sequelize) {
+  constructor (sequelize) {
     this.sequelize = sequelize
     this.plugins = {
       singularQuery: plugin.singularQueryPlugin,
@@ -27,11 +24,11 @@ export default class SequelizeContext {
     }
   }
 
-  define (schema:Schema<any>):Sequelize.Model {
+  define (schema) {
     return toSequelizeModel(this.sequelize, schema)
   }
 
-  applyPlugin (schema:Schema<any>):void {
+  applyPlugin (schema) {
     // console.log(`addSchema:${schema.name}`)
     const defaultPluginConfig = {
       hasManyLinkedField: {},

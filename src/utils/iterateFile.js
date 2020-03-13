@@ -1,7 +1,7 @@
-import path from 'path'
-import fs from 'fs'
+const path = require('path')
+const fs = require('fs')
 
-const iterateFile = function (dir:string, filter:(path:string, fileName:string, isDirectory:boolean) => boolean):Array<{path:string, fileName:string}> {
+const iterateFile = function (dir, filter) {
   const result = []
   fs.readdirSync(path.resolve(dir)).map(function (file) {
     const stats = fs.statSync(path.resolve(dir, file))
@@ -19,4 +19,4 @@ const iterateFile = function (dir:string, filter:(path:string, fileName:string, 
   return result
 }
 
-export default iterateFile
+module.exports = iterateFile

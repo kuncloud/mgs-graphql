@@ -1,15 +1,12 @@
 'use strict'
-import Sequelize from 'sequelize'
-import _ from 'lodash'
+const _ = require('lodash')
 
 const resolve = async function connectionResolve (Model, {args = {}, condition = {}, include = [], sort = [], sequelizeOptions = {}}) {
   let {after, first, before, last} = args
   first = (first == null ? 100 : first)
 
   const count = await Model.count({
-    where: {
-      ...condition
-    },
+    where: condition,
     include,
     distinct: true,
     col: sequelizeOptions.group ? sequelizeOptions.group : 'id'
@@ -24,9 +21,7 @@ const resolve = async function connectionResolve (Model, {args = {}, condition =
   let order = sort.map(({field, order}) => [field, order])
 
   const result = await Model.findAll({
-    where: {
-      ...condition
-    },
+    where: condition,
     include,
     limit: first,
     offset: offset,
@@ -54,27 +49,7 @@ const resolve = async function connectionResolve (Model, {args = {}, condition =
   }
 }
 
-const sqlResolve = async function (sequelize:Sequelize, modelName:string, args:{
-  after?: string,
-  first?: number,
-  before?: string,
-  last?: number,
-  conditionSql:string,
-  orderBySql:string,
-  replacements?:Object
-}):Promise<{
-  pageInfo: {
-    startCursor:string|number,
-    endCursor:string|number,
-    hasPreviousPage: boolean,
-    hasNextPage: boolean
-  },
-  edges:Array<{
-    node:any,
-    cursor:string|number
-  }>,
-  count: number
-}> {
+const sqlResolve = async function (sequelize, modelName, args) {
   let {after, first, before, last, conditionSql, orderBySql, replacements} = args
 
   first = (first == null ? 100 : first)

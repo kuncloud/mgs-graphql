@@ -1,15 +1,15 @@
 // @flow
-import singularQueryPlugin from './singularQueryPlugin'
-import pluralQueryPlugin from './pluralQueryPlugin'
+const singularQueryPlugin = require('./singularQueryPlugin')
+const pluralQueryPlugin = require('./pluralQueryPlugin')
 
-import addMutationPlugin from './addMutationPlugin'
-import deleteMutationPlugin from './deleteMutationPlugin'
-import updateMutationPlugin from './updateMutationPlugin'
+const addMutationPlugin = require('./addMutationPlugin')
+const deleteMutationPlugin = require('./deleteMutationPlugin')
+const updateMutationPlugin = require('./updateMutationPlugin')
 
-import hasManyLinkedFieldPlugin from './hasManyLinkedFieldPlugin'
-import hasOneLinkedFieldPlugin from './hasOneLinkedFieldPlugin'
+const hasManyLinkedFieldPlugin = require('./hasManyLinkedFieldPlugin')
+const hasOneLinkedFieldPlugin = require('./hasOneLinkedFieldPlugin')
 
-export default{
+module.exports = {
   singularQueryPlugin: singularQueryPlugin,
   pluralQueryPlugin: pluralQueryPlugin,
 

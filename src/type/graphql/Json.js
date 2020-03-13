@@ -1,5 +1,5 @@
 // @flow
-import {GraphQLScalarType, Kind} from 'graphql'
+const {GraphQLScalarType, Kind} = require('graphql')
 
 function astToJson (ast) {
   if (ast.kind === Kind.INT) {
@@ -28,7 +28,7 @@ function astToJson (ast) {
     return result
   }
 }
-export default new GraphQLScalarType({
+module.exports = new GraphQLScalarType({
   name: 'Json',
   serialize (value) {
     return value

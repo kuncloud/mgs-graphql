@@ -1,8 +1,8 @@
 // @flow
 /* eslint-env jest */
-import './schema'
-import sequelize from './sequelize'
-import initData from './data'
+require('./schema')
+const sequelize = require('./sequelize')
+const initData = require('./data')
 
 beforeAll(async () => {
   await sequelize.sync({

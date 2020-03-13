@@ -1,23 +1,23 @@
-import _ from 'lodash'
+const _ = require('lodash')
 
-import StringHelper from './StringHelper'
+const StringHelper = require('./StringHelper')
 
-export const validateType = (value, type = 'string') => {
+const validateType = (value, type = 'string') => {
   if (type === 'string') { return (typeof value === 'string' || (value && typeof value.$type === 'string')) }
   return (value instanceof type || (value && value.$type instanceof type))
 }
-export function formatLinkId (key:string):string {
+function formatLinkId (key) {
   return StringHelper.toInitialLowerCase(key) + 'Id'
 }
-export function pluralQueryName (schemaName: string): string {
+function pluralQueryName (schemaName) {
   return StringHelper.toInitialLowerCase(schemaName) + 's'
 }
-export function contactPath (...values) {
+function contactPath (...values) {
   return _.reduce(values, (path, v) => {
     return path + '_' + v
   })
 }
-export function calcRemoteLevels (description: string): number {
+function calcRemoteLevels (description) {
   if (_.isEmpty(description)) { return 0 }
 
   let level = 0
@@ -29,4 +29,12 @@ export function calcRemoteLevels (description: string): number {
   }
 
   return level
+}
+
+module.exports = {
+  validateType,
+  formatLinkId,
+  pluralQueryName,
+  contactPath,
+  calcRemoteLevels
 }

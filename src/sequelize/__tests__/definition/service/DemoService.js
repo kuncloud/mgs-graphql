@@ -1,9 +1,9 @@
 // @flow
-import SG from '../../../../'
+const SG = require('../../../../')
 
 let gWeather = '晴天'
 
-export default SG.service('DemoService').queries({
+module.exports = SG.service('DemoService').queries({
   weather: {
     $type: String,
     resolve: async function (args, context, info) {

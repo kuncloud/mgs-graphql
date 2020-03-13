@@ -1,24 +1,14 @@
 // @flow
 
-import _ from 'lodash'
+const _ = require('lodash')
 
-import * as graphql from 'graphql'
+const graphql = require('graphql')
 
-import type {GraphQLInputFieldConfig, GraphQLInputFieldConfigMap} from 'graphql'
+const Type = require('../type')
+const StringHelper = require('../utils/StringHelper')
+const RemoteSchema = require('../definition/RemoteSchema')
 
-import Type from '../type'
-import StringHelper from '../utils/StringHelper'
-import RemoteSchema from '../definition/RemoteSchema'
-// const json = new graphql.GraphQLObjectType({
-//   name:   'Json',
-//   fields: {
-//     condition: { type: Type.GraphQLScalarTypes.Json },
-//   }
-// })
-
-const convert = (name:string,
-                 path:string,
-                 field:any):?GraphQLInputFieldConfig => {
+const convert = (name, path, field) => {
   if (graphql.isInputType(field)) {
     return {type: field}
   }
@@ -30,12 +20,11 @@ const convert = (name:string,
     // invariant(false, 'unsupported type:isCompositeType' + typeof field)
     return
   }
-  const typeName = (name:string, path:string) => {
+  const typeName = (name, path) => {
     return name + path.replace(/\.\$type/g, '').replace(/\[\d*\]/g, '').split('.').map(v => StringHelper.toInitialUpperCase(v)).join('')
   }
 
-  const graphQLInputType = (name:string,
-                            config:any):?graphql.GraphQLInputType => {
+  const graphQLInputType = (name, config) => {
     name = StringHelper.toInitialUpperCase(name)
 
     if (config['$type']) {
@@ -74,10 +63,9 @@ const convert = (name:string,
     const subField = convert(name, path, field[0])
     if (!subField) return
 
-    return {
-      ...subField,
-      type: new graphql.GraphQLList(subField.type)
-    }
+    subField.type = new graphql.GraphQLList(subField.type)
+
+    return subField
   }
 
   if (typeof field === 'string') {
@@ -105,20 +93,20 @@ const convert = (name:string,
 
   if (field instanceof Object) {
     if (field['$type']) {
-      let result:?GraphQLInputFieldConfig
+      let result
       if (field['enumValues']) {
-        const values:{[index:string]:any} = {}
+        const values = {}
         field['enumValues'].forEach(
           t => {
             values[t] = {value: t}
           }
         )
-        result = ({
+        result = {
           type: new graphql.GraphQLEnumType({
             name: typeName(name, path),
             values: values
           })
-        }:GraphQLInputFieldConfig)
+        }
       } else {
         result = convert(name, path, field['$type'])
       }
@@ -141,8 +129,8 @@ const convert = (name:string,
   }
 }
 
-const toGraphQLInputFieldMap = function (name:string, fields:{[id:string]:any}):GraphQLInputFieldConfigMap {
-  const fieldMap:GraphQLInputFieldConfigMap = {}
+const toGraphQLInputFieldMap = function (name, fields) {
+  const fieldMap = {}
 
   _.forOwn(fields, (value, key) => {
     if (value['$type'] && (value['hidden'] || value['resolve'])) {

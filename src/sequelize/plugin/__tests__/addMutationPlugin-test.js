@@ -1,11 +1,11 @@
 // @flow
 /* eslint-env jest */
-import _ from 'lodash'
-import GraphQLExecutor from '../../__tests__/GraphQLExecutor'
+const _ = require('lodash')
+const GraphQLExecutor = require('../../__tests__/GraphQLExecutor')
 
 const graphQL = new GraphQLExecutor()
 
-test('AddMutationPlugin should work.', async () => {
+test('AddMutationPlugin should work.', async (done) => {
   const result = await graphQL.exec(`
   mutation{
     addUser(input:{
@@ -85,4 +85,5 @@ test('AddMutationPlugin should work.', async () => {
   expect(qResult.errors).toBeUndefined()
   const qUser = _.get(qResult, 'data.user')
   expect(qUser).toEqual(user)
+  done()
 })

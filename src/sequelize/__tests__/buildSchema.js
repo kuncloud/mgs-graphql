@@ -1,13 +1,12 @@
 // @flow
-import Sequelize from 'sequelize'
-import path from 'path'
-import fs from 'fs'
-import GS from '../../'
-import DemoService from './definition/service/DemoService'
+const path = require('path')
+const fs = require('fs')
+const GS = require('../../')
+const DemoService = require('./definition/service/DemoService')
 
-export default function (sequelize:Sequelize) {
-  function listSchemas (dir:string):Array<GS.Schema<any>> {
-    const schemas:Array<GS.Schema<any>> = []
+module.exports = function (sequelize) {
+  function listSchemas (dir) {
+    const schemas = []
     const handleFile = (d) => fs.readdirSync(path.resolve(__dirname, d)).map(function (file) {
       const stats = fs.statSync(path.resolve(__dirname, dir, file))
       const relativePath = [dir, file].join('/')
@@ -20,7 +19,7 @@ export default function (sequelize:Sequelize) {
       } else if (stats.isFile()) {
         if (file.match(/\.js$/) !== null && file !== 'index.js') {
           const name = './' + relativePath.replace('.js', '')
-          const schemaOrFun = require(name).default
+          const schemaOrFun = require(name)
           if (schemaOrFun instanceof GS.Schema) {
             schemas.push(schemaOrFun)
           } else if ((typeof schemaOrFun) === 'function') {
@@ -38,7 +37,15 @@ export default function (sequelize:Sequelize) {
     return schemas
   }
 
+  // const snapshot = v8Profile.takeSnapshot()
   const schemas = listSchemas('definition/schema')
+  // snapshot.export((err, rlt) => {
+  //   if (err) {
+  //     return
+  //   }
+  //   fs.writeFileSync('./server_js.heapsnapshot', rlt)
+  //   snapshot.delete()
+  // })
 
   return GS.build({
     sequelize: sequelize,

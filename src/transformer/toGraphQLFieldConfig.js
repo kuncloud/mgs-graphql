@@ -1,32 +1,18 @@
 // @flow
-import _ from 'lodash'
-import Sequelize from 'sequelize'
-import * as graphql from 'graphql'
-import * as relay from 'graphql-relay'
+const _ = require('lodash')
+const Sequelize = require('sequelize')
+const graphql = require('graphql')
+const relay = require('graphql-relay')
 
-import type {GraphQLFieldResolver, GraphQLOutputType} from 'graphql'
-
-import Type from '../type'
-import Context from '../Context'
-import StringHelper from '../utils/StringHelper'
-import {toGraphQLInputFieldMap} from './toGraphQLInputFieldMap'
-import RemoteSchema from '../definition/RemoteSchema'
-import invariant from '../utils/invariant'
-import * as helper from '../utils/helper'
-const toGraphQLFieldConfig = function (name:string,
-                                       postfix:string,
-                                       fieldType:any,
-                                       context:Context,
-                                       interfaces:any = [],
-                                       remoteWithId:boolean = false
-):{
-  type: GraphQLOutputType,
-  args?: {[string]:any},
-  resolve?: GraphQLFieldResolver<any, any>,
-  description?: ?string,
-} {
+const Type = require('../type')
+const StringHelper = require('../utils/StringHelper')
+const {toGraphQLInputFieldMap} = require('./toGraphQLInputFieldMap')
+const RemoteSchema = require('../definition/RemoteSchema')
+const invariant = require('../utils/invariant')
+const helper = require('../utils/helper')
+const toGraphQLFieldConfig = function (name, postfix, fieldType, context, interfaces, remoteWithId) {
   // console.log(`toGraphQLFieldConfig:${name},${postfix}`)
-  const typeName = (path:string) => {
+  const typeName = (path) => {
     return path.replace(/\.\$type/g, '').replace(/\[\d*\]/g, '').split('.').map(v => StringHelper.toInitialUpperCase(v)).join('')
   }
 
@@ -196,7 +182,7 @@ const toGraphQLFieldConfig = function (name:string,
         result.type = new graphql.GraphQLNonNull(result.type)
       }
       if (fieldType['resolve']) {
-        const wrapConfig:any = {
+        const wrapConfig = {
           name: name.split('.').slice(-1)[0],
           path: name,
           $type: result.type,
@@ -284,4 +270,4 @@ const toGraphQLFieldConfig = function (name:string,
   throw new Error('Unsupported type: ' + fieldType)
 }
 
-export default toGraphQLFieldConfig
+module.exports = toGraphQLFieldConfig

@@ -1,11 +1,9 @@
 // @flow
-import * as _ from 'lodash'
-import * as graphql from 'graphql'
+const _ = require('lodash')
 
-import Schema from '../../definition/Schema'
-import StringHelper from '../../utils/StringHelper'
+const StringHelper = require('../../utils/StringHelper')
 
-export default function singularQuery (schema:Schema<any>, options:any):void {
+module.exports = function singularQuery (schema, options) {
   const name = StringHelper.toInitialLowerCase(schema.name)
   const searchFields = {
     id: {
@@ -31,7 +29,7 @@ export default function singularQuery (schema:Schema<any>, options:any):void {
       config: config,
       $type: schema.name,
       args: searchFields,
-      resolve: async function (args:{[argName: string]: any}, context:any, info:graphql.GraphQLResolveInfo, sgContext) {
+      resolve: async function (args, context, info, sgContext) {
         if (args === null || Object.keys(args).length === 0) {
           return null
         }
@@ -40,9 +38,7 @@ export default function singularQuery (schema:Schema<any>, options:any):void {
           return sgContext.loaders[schema.name].load(args.id)
         }
         return sgContext.models[schema.name].findOne({
-          where: {
-            ...args
-          }
+          where: args
         })
       }
     }

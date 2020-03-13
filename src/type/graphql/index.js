@@ -1,9 +1,9 @@
 // @flow
-import Date from './Date'
-import Json from './Json'
-import globalIdInputType from './globalIdInputType'
+const Date = require('./Date')
+const Json = require('./Json')
+const globalIdInputType = require('./globalIdInputType')
 
-export default{
+module.exports = {
   Date: Date,
   Json: Json,
   globalIdInputType: globalIdInputType
