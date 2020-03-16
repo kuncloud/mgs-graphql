@@ -23,36 +23,6 @@ const {buildBindings} = require('./utils/remote')
 const helper = require('./utils/helper')
 
 module.exports = class Context {
-  dbContext
-
-  options
-
-  dbModels
-
-  nodeInterface
-
-  schemas
-  loaders
-
-  remoteLoader
-
-  services
-
-  graphQLObjectTypes
-
-  queries
-
-  mutations
-
-  subscriptions
-
-  connectionDefinitions
-
-  resolvers
-
-  remotePrefix
-
-  remoteInfo
 
   constructor (sequelize, options, remoteCfg) {
     this.dbContext = new SequelizeContext(sequelize)
@@ -92,54 +62,54 @@ module.exports = class Context {
     this.remotePrefix = '_remote_'
     // 暂时只开启一个remoteLoader，可考虑开启多个
     this.remoteLoader = this.options.remoteLoader !== false ? this.initRemoteLoader() : null
-  }
 
-  getSGContext = (function () {
-    let unique
-    function getInstance() {
-      if (!unique) {
-        unique = SGContext(this)
+    this.getSGContext = (function () {
+      let unique
+      function getInstance() {
+        if (!unique) {
+          unique = SGContext(this)
+        }
+        return unique
       }
-      return unique
-    }
-    function SGContext(self) {
-      return {
-        sequelize: self.dbContext.sequelize,
-        loaders: self.loaders,
-        remoteLoader: self.remoteLoader,
-        dataLoader: self.options.dataLoader,
-        models: _.mapValues(self.schemas, (schema) => self.dbModel(schema.name)),
-        services: _.mapValues(self.services, (service) => service.config.statics),
-        bindings: {
-          toGId: (type, id) => relay.toGlobalId(type, id),
-          toDbId: (type, id) => {
-            const gid = relay.fromGlobalId(id)
-            if (gid.type !== type) {
-              throw new Error(`错误的global id,type:${type},gid:${id}`)
-            }
-            return gid.id
+      function SGContext(self) {
+        return {
+          sequelize: self.dbContext.sequelize,
+          loaders: self.loaders,
+          remoteLoader: self.remoteLoader,
+          dataLoader: self.options.dataLoader,
+          models: _.mapValues(self.schemas, (schema) => self.dbModel(schema.name)),
+          services: _.mapValues(self.services, (service) => service.config.statics),
+          bindings: {
+            toGId: (type, id) => relay.toGlobalId(type, id),
+            toDbId: (type, id) => {
+              const gid = relay.fromGlobalId(id)
+              if (gid.type !== type) {
+                throw new Error(`错误的global id,type:${type},gid:${id}`)
+              }
+              return gid.id
+            },
+            ...self.remoteInfo['binding']
           },
-          ...self.remoteInfo['binding']
-        },
-        getTargetBinding: (modeName) => {
-          if (!self.remoteInfo['schema']) {
-            return
-          }
-
-          let target
-          _.forOwn(self.remoteInfo['schema'], (value, key) => {
-            if (value && value.getType(modeName)) {
-              target = key
-              return false
+          getTargetBinding: (modeName) => {
+            if (!self.remoteInfo['schema']) {
+              return
             }
-          })
 
-          return target ? self.remoteInfo['binding'][target] : null
+            let target
+            _.forOwn(self.remoteInfo['schema'], (value, key) => {
+              if (value && value.getType(modeName)) {
+                target = key
+                return false
+              }
+            })
+
+            return target ? self.remoteInfo['binding'][target] : null
+          }
         }
       }
-    }
-    return getInstance
-  })()
+      return getInstance
+    })()
+  }
 
   getTargetSchema (modeName) {
     if (!this.remoteInfo['schema']) {
