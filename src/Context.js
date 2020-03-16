@@ -418,12 +418,8 @@ module.exports = class Context {
     if (!self.dbModels[typeName]) {
       self.dbModels[typeName] = self.dbContext.define(model)
 
-      Object.assign(self.dbModels[typeName], model.config.statics, {
-        getSGContext: self.getSGContext()
-      })
-      Object.assign(self.dbModels[typeName].prototype, model.config.methods, {
-        getSGContext: self.getSGContext()
-      })
+      Object.assign(self.dbModels[typeName], model.config.statics)
+      Object.assign(self.dbModels[typeName].prototype, model.config.methods)
     }
     return self.dbModels[typeName]
   }
