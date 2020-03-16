@@ -1,9 +1,6 @@
 // @flow
 
 module.exports = class Service {
-  name
-
-  config
 
   constructor (name) {
     this.name = name

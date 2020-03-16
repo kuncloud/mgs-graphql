@@ -1,14 +1,6 @@
 // @flow
 
 module.exports = class ScalarFieldType {
-  name
-  description
-
-  graphQLInputType
-
-  graphQLOutputType
-
-  columnType
 
   constructor (config) {
     this.name = config.name

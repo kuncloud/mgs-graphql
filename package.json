@@ -7,9 +7,9 @@
     "format": "standard --fix",
     "test": "jest",
     "sequelize-demo": "node --heap-prof src/sequelize/__tests__/server.js",
-    "build": "rm -rf lib && mkdir lib && cp package.json lib/ && npm run build-dot-flow",
+    "build": "rm -rf lib && mkdir lib && cp package.json lib/ && cp -r src/* lib/",
     "build-dot-flow": "find ./src -name '*.js' | while read filepath; do cp $filepath `echo $filepath | sed 's/\\/src\\//\\/lib\\//g'`; done",
-    "buildAndPublish": "npm run flow && npm run format && npm run build && npm publish",
+    "buildAndPublish": "npm run build && npm publish",
     "docs": "documentation build -c documentation.yml --sort-order alpha -f md -o docs/API.md src/index.js src/Definition.js"
   },
   "author": "MGS Team",

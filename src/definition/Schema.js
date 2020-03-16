@@ -2,11 +2,6 @@
 const _ = require('lodash')
 
 module.exports = class Schema {
-  name
-
-  config
-
-  // remoteLinkConfig:RemoteLinkConfig
 
   constructor (name, options = {}) {
     this.name = name

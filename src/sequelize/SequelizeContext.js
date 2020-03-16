@@ -5,9 +5,6 @@ const toSequelizeModel = require('./toSequelizeModel.js')
 const plugin = require('./plugin')
 
 module.exports = class SequelizeContext {
-  sequelize
-
-  plugins
 
   constructor (sequelize) {
     this.sequelize = sequelize
