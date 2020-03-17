@@ -77,7 +77,7 @@ module.exports = class Context {
           loaders: self.loaders,
           remoteLoader: self.remoteLoader,
           dataLoader: self.options.dataLoader,
-          models: _.mapValues(self.schemas, (schema) => self.dbModel(schema.name)),
+          models: self.dbModels,
           services: _.mapValues(self.services, (service) => service.config.statics),
           bindings: {
             toGId: (type, id) => relay.toGlobalId(type, id),
