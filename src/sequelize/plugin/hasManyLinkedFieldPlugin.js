@@ -31,7 +31,7 @@ module.exports = function hasManyLinkedField (schema, options) {
             }
             const sort = config.sort || [{field: 'id', order: 'ASC'}]
             let sourceKey = config.sourceKey || 'id'
-            let foreignKey = config.foreignKey || (config.foreignField + 'Id')
+            let foreignKey = config.foreignKey ? config.foreignKey.field ? config.foreignKey.field : config.foreignKey : (config.foreignField + 'Id')
             condition[foreignKey] = root[sourceKey]
 
             return sgContext.models[config.target].findAll({
@@ -60,7 +60,7 @@ module.exports = function hasManyLinkedField (schema, options) {
             //  }
             // } else {
             let sourceKey = config.sourceKey || 'id'
-            let foreignKey = config.foreignKey || (config.foreignField + 'Id')
+            let foreignKey = config.foreignKey ? config.foreignKey.field ? config.foreignKey.field : config.foreignKey : (config.foreignField + 'Id')
             condition[foreignKey] = root[sourceKey]
 
             args.condition = condition
