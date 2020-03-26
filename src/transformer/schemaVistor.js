@@ -199,14 +199,27 @@ function mergeAllSchemas (schema, schemaMerged, resolvers, prefix) {
   //   }
   // })
 
-  let objMap = {}
+  let schemas = [schema]
   _.forOwn(otherTypes, (objs, schemaName) => {
+    let curSchema = []
     _.forOwn(objs, (obj, name) => {
-      objMap[name] = obj
+      curSchema.push(obj)
     })
+    schemas.push(curSchema)
   })
-
-  return mergeSchemas({schemas: [schema, (_.map(objMap, (value) => value))], resolvers})
+  return mergeSchemas({
+    schemas: schemas,
+    resolvers,
+    onTypeConflict: (left, right) => {
+      if (!left.description || !left.description.startsWith('__')) {
+        return left
+      }
+      if (!right.description || !right.description.startsWith('__')) {
+        return right
+      }
+      return left
+    }
+  })
 }
 
 module.exports = {
