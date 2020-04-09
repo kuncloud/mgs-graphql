@@ -201,7 +201,7 @@ module.exports = class Context {
                 typeof id === 'string'
               )) {
               if (self.remoteLoader && self.options.remoteLoader !== false) {
-                return self.remoteLoader.load({id, info, target})
+                return self.remoteLoader.load({id, info, target, context})
               }
               return info.mergeInfo.delegateToSchema({
                 schema: targetSchema,
@@ -454,7 +454,7 @@ module.exports = class Context {
     const self = this
 
     if (options) {
-      options.map(({id, info}) => {
+      options.map(({id, info, context}) => {
         const target = info.fieldName
         if (_.keys(targets).indexOf(target) === -1) {
           _.assign(targets, {
@@ -462,7 +462,8 @@ module.exports = class Context {
               ids: [],
               info,
               // 默认传递id，防止前端不传id导致下面匹配不上
-              parsedInfo: {id: true}
+              parsedInfo: {id: true},
+              context
             }
           })
         }
@@ -495,7 +496,7 @@ module.exports = class Context {
       const temp = {}
 
       for (let target in targets) {
-        const {ids, info, parsedInfo} = targets[target]
+        const {ids, info, parsedInfo, context} = targets[target]
         let strInfo = JSON.stringify(parsedInfo).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
 
         const type = info.returnType.name
@@ -522,7 +523,8 @@ module.exports = class Context {
                 }
               }
             },
-            `{edges{node${strInfo}}}`
+            `{edges{node${strInfo}}}`,
+            { context }
           )
           res.edges.map(({node}) => {
             temp[self.encryptId(node.id, target)] = node
