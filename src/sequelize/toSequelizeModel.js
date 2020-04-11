@@ -98,6 +98,9 @@ module.exports = function toSequelizeModel (sequelize, schema) {
           if (value.enumValues != null) {
             dbDefinition[key].type = Sequelize.ENUM(...value.enumValues)
           }
+          if (value.description != null) {
+            dbDefinition[key].comment = value.description
+          }
           dbDefinition[key] = {...dbDefinition[key], ...value.column}
         } else {
           dbDefinition[key] = {type: type}
