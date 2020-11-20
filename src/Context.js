@@ -495,11 +495,12 @@ module.exports = class Context {
         this.setAliasFieldValue(fieldNode, node)
       }
     }
+    if (info.alias) {
+      node[info.alias.value] = node[info.name.value]
+    }
     if (info.selectionSet && info.selectionSet.selections) {
       for (let selection of info.selectionSet.selections) {
-        if (selection.alias) {
-          node[selection.alias.value] = node[selection.name.value]
-        }
+        this.setAliasFieldValue(selection, node[info.name.value] ? node[info.name.value] : node)
       }
     }
   }
