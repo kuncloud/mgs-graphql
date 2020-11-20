@@ -488,6 +488,22 @@ module.exports = class Context {
     return `${id}-${target}`
   }
 
+  // 把有别名的字段设置（还原）回去
+  setAliasFieldValue (info, node) {
+    if (info.fieldNodes) {
+      for (let fieldNode of info.fieldNodes) {
+        this.setAliasFieldValue(fieldNode, node)
+      }
+    }
+    if (info.selectionSet && info.selectionSet.selections) {
+      for (let selection of info.selectionSet.selections) {
+        if (selection.alias) {
+          node[selection.alias.value] = node[selection.name.value]
+        }
+      }
+    }
+  }
+
   initRemoteLoader () {
     const self = this
     return new DataLoader(async(options) => {
@@ -509,6 +525,7 @@ module.exports = class Context {
             ids: distinctIds
           }, strInfo)
           for (let node of res) {
+            self.setAliasFieldValue(info, node)
             temp[self.encryptId(node.id, target)] = node
           }
         } else {
@@ -527,6 +544,7 @@ module.exports = class Context {
             { context }
           )
           res.edges.map(({node}) => {
+            self.setAliasFieldValue(info, node)
             temp[self.encryptId(node.id, target)] = node
           })
         }
