@@ -490,17 +490,23 @@ module.exports = class Context {
 
   // 把有别名的字段设置（还原）回去
   setAliasFieldValue (info, node) {
-    if (info.fieldNodes) {
-      for (let fieldNode of info.fieldNodes) {
-        this.setAliasFieldValue(fieldNode, node)
+    if (Array.isArray(node)) {
+      for (let n of node) {
+        this.setAliasFieldValue(info, n)
       }
-    }
-    if (info.alias) {
-      node[info.alias.value] = node[info.name.value]
-    }
-    if (info.selectionSet && info.selectionSet.selections) {
-      for (let selection of info.selectionSet.selections) {
-        this.setAliasFieldValue(selection, node[info.name.value] ? node[info.name.value] : node)
+    } else {
+      if (info.fieldNodes) {
+        for (let fieldNode of info.fieldNodes) {
+          this.setAliasFieldValue(fieldNode, node)
+        }
+      }
+      if (info.alias) {
+        node[info.alias.value] = node[info.name.value]
+      }
+      if (info.selectionSet && info.selectionSet.selections) {
+        for (let selection of info.selectionSet.selections) {
+          this.setAliasFieldValue(selection, node[info.name.value] ? node[info.name.value] : node)
+        }
       }
     }
   }
@@ -524,7 +530,7 @@ module.exports = class Context {
         if (binding.query[`get${type}sByIds`]) {
           const res = await binding.query[`get${type}sByIds`]({
             ids: distinctIds
-          }, strInfo)
+          }, strInfo, { context })
           for (let node of res) {
             self.setAliasFieldValue(info, node)
             temp[self.encryptId(node.id, target)] = node
