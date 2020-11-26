@@ -424,7 +424,7 @@ module.exports = function pluralQuery (schema, options) {
         args.include = include
         let res = await resolveConnection(dbModel, args)
         if (context.qid && res && res.edges && res.edges.length > 1) {
-          await mergeNQuery(context.qid, res.edges, schema, sgContext.getTargetBinding, info, sgContext.bindings.toDbId)
+          await mergeNQuery(context, res.edges, schema, sgContext.getTargetBinding, info, sgContext.bindings.toDbId)
         }
 
         // console.log('before:', res)

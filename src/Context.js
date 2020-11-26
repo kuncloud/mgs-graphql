@@ -456,6 +456,8 @@ module.exports = class Context {
     if (options) {
       options.map(({id, info, context}) => {
         const target = info.fieldName
+        const aliasMap = {}
+        self.findAliasField(info, aliasMap, '')
         if (_.keys(targets).indexOf(target) === -1) {
           _.assign(targets, {
             [target]: {
@@ -463,6 +465,7 @@ module.exports = class Context {
               info,
               // 默认传递id，防止前端不传id导致下面匹配不上
               parsedInfo: {id: true},
+              aliasMap,
               context
             }
           })
@@ -471,6 +474,7 @@ module.exports = class Context {
         if (_.keys(targets).indexOf(target) >= 0) {
           targets[target].ids.push(id)
           targets[target].parsedInfo = self.analysisInfo(targets[target].parsedInfo, info)
+          targets[target].aliasMap = _.assign(targets[target].aliasMap, aliasMap)
         }
       })
     }
@@ -488,26 +492,52 @@ module.exports = class Context {
     return `${id}-${target}`
   }
 
-  // 把有别名的字段设置（还原）回去
-  setAliasFieldValue (info, node) {
-    if (Array.isArray(node)) {
-      for (let n of node) {
-        this.setAliasFieldValue(info, n)
+  recursionSetAlias(obj, aliasFields, fields, index = 0) {
+    if (Array.isArray(obj)) {
+      for (let o of obj) {
+        this.recursionSetAlias(o, aliasFields, fields, index)
+      }
+      return true
+    }
+    if (fields.length - 1 === index) {
+      obj[aliasFields[index]] = obj[fields[index]]
+      return true
+    }
+    const subObj = obj[fields[index]]
+    this.recursionSetAlias(subObj, aliasFields, fields, index + 1)
+  }
+
+  joinKey(root, key) {
+    if (root) {
+      return root + '.' + key
+    }
+    return key
+  }
+
+  findAliasField (info, aliasMap, key = '', isFieldNode = false) {
+    if (info.fieldNodes) {
+      for (let fieldNode of info.fieldNodes) {
+        this.findAliasField(fieldNode, aliasMap, key, true)
       }
     } else {
-      if (info.fieldNodes) {
-        for (let fieldNode of info.fieldNodes) {
-          this.setAliasFieldValue(fieldNode, node)
-        }
-      }
+      const newKey = this.joinKey(key, info.name.value)
       if (info.alias) {
-        node[info.alias.value] = node[info.name.value]
+        aliasMap[this.joinKey(key, info.alias.value)] = newKey
       }
       if (info.selectionSet && info.selectionSet.selections) {
         for (let selection of info.selectionSet.selections) {
-          this.setAliasFieldValue(selection, node[info.name.value] ? node[info.name.value] : node)
+          this.findAliasField(selection, aliasMap, isFieldNode ? '' : newKey)
         }
       }
+    }
+  }
+
+  // 把有别名的字段设置（还原）回去
+  setAliasFieldValue (aliasMap, node) {
+    for (let [aliasName, fieldName] of Object.entries(aliasMap)) {
+      const fields = fieldName.split('.')
+      const aliasFields = aliasName.split('.')
+      this.recursionSetAlias(node, aliasFields, fields)
     }
   }
 
@@ -519,7 +549,7 @@ module.exports = class Context {
       const temp = {}
 
       for (let target in targets) {
-        const {ids, info, parsedInfo, context} = targets[target]
+        const {ids, info, parsedInfo, aliasMap, context} = targets[target]
         let strInfo = JSON.stringify(parsedInfo).replace(/"/g, '').replace(/:true/g, '').replace(/:{/g, '{')
 
         const type = info.returnType.name
@@ -532,7 +562,7 @@ module.exports = class Context {
             ids: distinctIds
           }, strInfo, { context })
           for (let node of res) {
-            self.setAliasFieldValue(info, node)
+            self.setAliasFieldValue(aliasMap, node)
             temp[self.encryptId(node.id, target)] = node
           }
         } else {
@@ -551,7 +581,7 @@ module.exports = class Context {
             { context }
           )
           res.edges.map(({node}) => {
-            self.setAliasFieldValue(info, node)
+            self.setAliasFieldValue(aliasMap, node)
             temp[self.encryptId(node.id, target)] = node
           })
         }

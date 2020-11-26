@@ -25,10 +25,12 @@ function cleanNQuery () {
   }
 }
 
-async function mergeNQuery (qid, edges, schema, getTargetBinding, info, toDbId) {
+async function mergeNQuery (context, edges, schema, getTargetBinding, info, toDbId) {
   if (!edges || edges.length <= 1) {
     return
   }
+
+  const qid = context.qid
 
   const findSelectionNode = (field, findName, isDeep) => {
     // console.log('findSelectionNode field:', findName, graphql.print(field))
@@ -145,7 +147,7 @@ async function mergeNQuery (qid, edges, schema, getTargetBinding, info, toDbId) 
       }
       const subIds = uniqueIds(edges)
       if (binding.query[`get${targetModelName}sByIds`]) {
-        const res = await binding.query[`get${targetModelName}sByIds`]({ids: subIds.map(subId => relay.toGlobalId(targetModelName, subId))}, currNode)
+        const res = await binding.query[`get${targetModelName}sByIds`]({ids: subIds.map(subId => relay.toGlobalId(targetModelName, subId))}, currNode, { context })
         for (let node of res) {
           queryContext[+toDbId(targetModelName, node.id)] = node
         }
@@ -155,7 +157,7 @@ async function mergeNQuery (qid, edges, schema, getTargetBinding, info, toDbId) 
               node ${currNode}
             }
           }`
-        const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection)
+        const res = await binding.query[apiName]({options: {where: {id: {in: subIds}}}}, selection, { context })
         const nodeArr = res && res.edges
         const length = nodeArr && nodeArr.length
         for (let i = 0; i < length; ++i) {
