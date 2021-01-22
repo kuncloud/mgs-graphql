@@ -1,6 +1,8 @@
 // @flow
 const _ = require('lodash')
 
+const { validateType } = require('../../utils/helper')
+const RemoteSchema = require('../../definition/RemoteSchema')
 const StringHelper = require('../../utils/StringHelper')
 
 module.exports = function singularQuery (schema, options) {
@@ -14,6 +16,11 @@ module.exports = function singularQuery (schema, options) {
   _.forOwn(schema.config.fields, (value, key) => {
     if (!value['$type'] || (value['searchable'] !== false && value['hidden'] !== true && !value['resolve'])) {
       if (value['unique']) {
+        if (validateType(value['$type'], RemoteSchema)) {
+          if (!key.endsWith('Id')) {
+            key = key + 'Id'
+          }
+        }
         searchFields[key] = Object.assign({}, value, {required: false})
       }
     }

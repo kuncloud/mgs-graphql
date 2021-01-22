@@ -493,6 +493,9 @@ module.exports = class Context {
   }
 
   recursionSetAlias(obj, aliasFields, fields, index = 0) {
+    if (obj === null || obj === undefined) {
+      return true
+    }
     if (Array.isArray(obj)) {
       for (let o of obj) {
         this.recursionSetAlias(o, aliasFields, fields, index)
