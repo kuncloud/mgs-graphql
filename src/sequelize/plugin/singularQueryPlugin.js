@@ -16,7 +16,7 @@ module.exports = function singularQuery (schema, options) {
   _.forOwn(schema.config.fields, (value, key) => {
     if (!value['$type'] || (value['searchable'] !== false && value['hidden'] !== true && !value['resolve'])) {
       if (value['unique']) {
-        if (validateType(value['$type'], RemoteSchema)) {
+        if (validateType(value, RemoteSchema) || validateType(value, 'string')) {
           if (!key.endsWith('Id')) {
             key = key + 'Id'
           }
